@@ -1,0 +1,68 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Set up Mitnetz Strom EDM",
+        "data": {
+          "username": "Username",
+          "password": "Password",
+          "update_interval": "Update interval (minutes)",
+          "reload_window": "Reload window (minutes)",
+          "timeout": "Timeout (seconds)",
+          "stale_intervals": "Value valid for max. N measurement intervals (then 'unknown')"
+        }
+      },
+      "reconfigure": {
+        "title": "Update Mitnetz Strom EDM credentials",
+        "data": {
+          "username": "Username",
+          "password": "Password"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Login failed. Please check username and password.",
+      "cannot_connect": "Could not connect to the Mitnetz EDM portal."
+    },
+    "abort": {
+      "already_configured": "This account is already configured.",
+      "reconfigure_successful": "Credentials updated successfully."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Mitnetz Strom EDM Options",
+        "data": {
+          "update_interval": "Update interval (minutes)",
+          "reload_window": "Reload window (minutes)",
+          "timeout": "Timeout (seconds)",
+          "stale_intervals": "Value valid for max. N measurement intervals (then 'unknown')"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "measurement_line": {
+        "name": "{obis_code}"
+      }
+    }
+  },
+  "services": {
+    "import_history": {
+      "name": "Import history",
+      "description": "Re-fetch measurements for an arbitrary time range.",
+      "fields": {
+        "start": {
+          "name": "Start",
+          "description": "Start of the time range to import."
+        },
+        "end": {
+          "name": "End",
+          "description": "End of the time range to import."
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,18 @@
+import_history:
+  name: Historie nachladen
+  description: >-
+    Lädt Messwerte für einen beliebigen Zeitraum aus dem Mitnetz-EDM-Portal
+    nach und aktualisiert die Sensoren.
+  fields:
+    start:
+      name: Start
+      description: Beginn des nachzuladenden Zeitraums.
+      required: true
+      selector:
+        datetime:
+    end:
+      name: Ende
+      description: Ende des nachzuladenden Zeitraums.
+      required: true
+      selector:
+        datetime:

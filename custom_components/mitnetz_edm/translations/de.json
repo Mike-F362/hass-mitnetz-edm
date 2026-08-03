@@ -1,0 +1,68 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Mitnetz Strom EDM einrichten",
+        "data": {
+          "username": "Benutzername",
+          "password": "Passwort",
+          "update_interval": "Updateintervall (Minuten)",
+          "reload_window": "Nachladefenster (Minuten)",
+          "timeout": "Timeout (Sekunden)",
+          "stale_intervals": "Wert gilt für max. N Messintervalle (danach 'unbekannt')"
+        }
+      },
+      "reconfigure": {
+        "title": "Mitnetz Strom EDM Zugangsdaten aktualisieren",
+        "data": {
+          "username": "Benutzername",
+          "password": "Passwort"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Anmeldung fehlgeschlagen. Bitte Benutzername und Passwort prüfen.",
+      "cannot_connect": "Verbindung zum Mitnetz-EDM-Portal fehlgeschlagen."
+    },
+    "abort": {
+      "already_configured": "Dieses Konto ist bereits konfiguriert.",
+      "reconfigure_successful": "Zugangsdaten erfolgreich aktualisiert."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Mitnetz Strom EDM Optionen",
+        "data": {
+          "update_interval": "Updateintervall (Minuten)",
+          "reload_window": "Nachladefenster (Minuten)",
+          "timeout": "Timeout (Sekunden)",
+          "stale_intervals": "Wert gilt für max. N Messintervalle (danach 'unbekannt')"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "measurement_line": {
+        "name": "{obis_code}"
+      }
+    }
+  },
+  "services": {
+    "import_history": {
+      "name": "Historie nachladen",
+      "description": "Lädt Messwerte für einen beliebigen Zeitraum nach.",
+      "fields": {
+        "start": {
+          "name": "Start",
+          "description": "Beginn des nachzuladenden Zeitraums."
+        },
+        "end": {
+          "name": "Ende",
+          "description": "Ende des nachzuladenden Zeitraums."
+        }
+      }
+    }
+  }
+}
