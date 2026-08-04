@@ -37,9 +37,19 @@ from .obis import UNIT_KW, UNIT_KWH, Quantity
 _LOGGER = logging.getLogger(__name__)
 
 
-def statistic_id_for(line_id: str) -> str:
-    """Build the external statistic id for a measurement line."""
-    return f"{DOMAIN}:{line_id.lower()}"
+#: Suffix for the derived average-power series of an interval-energy line.
+POWER_STATISTIC_SUFFIX = "_power"
+
+
+def statistic_id_for(line_id: str, suffix: str = "") -> str:
+    """Build the external statistic id for a measurement line.
+
+    Args:
+        line_id: The portal's line id.
+        suffix: Distinguishes additional series derived from the same line,
+            e.g. :data:`POWER_STATISTIC_SUFFIX`.
+    """
+    return f"{DOMAIN}:{line_id.lower()}{suffix}"
 
 
 def _floor_to_hour(moment: datetime) -> datetime:
@@ -118,8 +128,14 @@ async def async_import_line_statistics(
     display_name: str,
     quantity: Quantity,
     points: list[tuple[datetime, float]],
+    suffix: str = "",
 ) -> None:
-    """Write one line's interval data into long-term statistics."""
+    """Write one line's interval data into long-term statistics.
+
+    Args:
+        suffix: Appended to the statistic id, so a line can contribute more than
+            one series (its energy plus the power derived from it).
+    """
     if not points:
         return
 
@@ -127,7 +143,7 @@ async def async_import_line_statistics(
         _LOGGER.debug("Skipping statistics for %s: unknown quantity", line_id)
         return
 
-    statistic_id = statistic_id_for(line_id)
+    statistic_id = statistic_id_for(line_id, suffix)
     has_sum = quantity in (Quantity.ENERGY_INTERVAL, Quantity.ENERGY_TOTAL)
     unit = UNIT_KWH if has_sum else UNIT_KW
 

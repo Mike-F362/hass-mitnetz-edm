@@ -32,7 +32,10 @@ async def test_diagnostics_reports_session_and_counts(hass, init_integration):
     data = await async_get_config_entry_diagnostics(hass, init_integration)
 
     assert data["coordinator"]["measurement_point_count"] == 1
-    assert data["coordinator"]["sensor_count"] == 3
+    # 3 lines + a derived power sensor for each of the 2 interval-energy lines.
+    assert data["coordinator"]["line_count"] == 3
+    assert data["coordinator"]["derived_power_count"] == 2
+    assert data["coordinator"]["sensor_count"] == 5
     assert data["coordinator"]["last_update_success"] is True
     assert data["session"]["logged_in"] is True
     assert data["session"]["session_age_seconds"] is not None

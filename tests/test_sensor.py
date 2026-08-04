@@ -35,12 +35,18 @@ ENTITY_MAX = "sensor.mitnetz_strom_edm_einspeisung_maximum"
 
 
 async def test_all_lines_create_sensors(hass, init_integration):
-    """Every line reported by the portal becomes a sensor, automatically."""
+    """Every line becomes a sensor, plus a derived kW twin per energy line.
+
+    3 lines (2 interval energy + 1 maximum demand) -> 3 + 2 = 5 entities.
+    """
     entity_registry = er.async_get(hass)
     entries = er.async_entries_for_config_entry(
         entity_registry, init_integration.entry_id
     )
-    assert len(entries) == 3
+    assert len(entries) == 5
+
+    derived = [e for e in entries if e.unique_id.endswith("_power")]
+    assert len(derived) == 2
 
 
 async def test_energy_line_units(hass, init_integration):

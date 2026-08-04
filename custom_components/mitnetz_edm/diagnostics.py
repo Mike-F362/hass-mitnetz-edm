@@ -48,6 +48,8 @@ async def async_get_config_entry_diagnostics(
             ),
             "measurement_point_count": coordinator.measurement_point_count,
             "sensor_count": coordinator.sensor_count,
+            "line_count": coordinator.line_count,
+            "derived_power_count": coordinator.derived_power_count,
             "measurement_interval_seconds": (
                 coordinator.measurement_interval.total_seconds()
                 if coordinator.measurement_interval

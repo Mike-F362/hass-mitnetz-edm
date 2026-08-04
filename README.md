@@ -75,6 +75,50 @@ Per-sensor attributes: `obis_code`, `measurement_point`, `quantity`,
 `direction`, `interval_start`, `interval_end`, `interval_minutes`,
 `data_age_minutes`, `intervals_in_window`.
 
+### Derived power sensors
+
+Every interval-energy line (OBIS `D` = 29) additionally gets a **kW sensor**,
+e.g. "Bezug Leistung" and "Einspeisung Leistung". It carries the average power
+of the most recent measurement interval:
+
+    P[kW] = E[kWh] / t[h]
+
+For the usual 15-minute interval that is simply a factor of four. One value per
+interval, so the history graph shows a real power curve rather than a single
+daily peak.
+
+This is not a home-grown approximation. The portal's own endpoint
+
+    /data/timeseries/moment/0/<start>/<value>/<end>/<rkmgId>/<period>
+
+performs exactly this division server-side — `<value>` is an *input*, the
+largest interval energy in kWh, and `<rkmgId>` is the line id found in the
+`rkmgId` field of the timeseries response. Probing it confirms the relation:
+
+| Input (kWh) | Period    | Output (kW) |
+|-------------|-----------|-------------|
+| 1.1104      | `15mins`  | 4.4416      |
+| 2.2208      | `15mins`  | 8.8832      |
+| 2.0         | `15mins`  | 8           |
+| 1.1104      | `hours`   | 1.1104      |
+
+Since the interval is already known from the timestamps, the integration does
+the division locally instead of issuing an extra HTTP request per value.
+
+Meters that report native power lines (`D` = 4/5/6/7) keep those and get no
+derived twin. Cumulative registers (`D` = 8/9) are not converted.
+
+### Where the min/max figures live
+
+Home Assistant stores power statistics as `mean`/`min`/`max` per hour, so the
+derived kW series gives you the per-hour minimum, maximum and average for any
+period via the statistics graph card — no extra sensor needed. This mirrors
+what the portal shows: requesting the timeseries with `aggregationperiod=hours`
+returns populated `minima`/`maxima`/`minTimestamps`/`maxTimestamps` arrays
+holding the extremes of the four quarter-hours in each hour. At the base
+15-minute resolution those arrays are empty, because there is nothing left to
+aggregate.
+
 ## Units and quantities
 
 The integration derives the physical meaning of each line from its OBIS code
@@ -138,6 +182,10 @@ aggregated per hour:
 - Energy lines → `sum` (running total, usable in the Energy Dashboard)
 - Power lines → `mean` / `min` / `max`
 
+Each interval-energy line contributes two series: its energy under
+`mitnetz_edm:<line_id>` and the derived power under
+`mitnetz_edm:<line_id>_power`.
+
 The reload window deliberately overlaps hours that were already written so late
 readings get corrected. The sum calculation starts from the hour *before* the
 import window, so nothing is counted twice.
@@ -184,6 +232,8 @@ Home Assistant itself requires (3.13+).
 | File                           | Focus                                                          |
 |--------------------------------|----------------------------------------------------------------|
 | `test_obis.py`                 | OBIS classification, the kW-instead-of-kWh regression           |
+| `test_power.py`                | Energy-to-power conversion against portal-verified values       |
+| `test_derived_power_sensor.py` | Derived kW entity, staleness, separate statistics id            |
 | `test_api.py`                  | Login/CSRF, XSRF and XHR headers, date format, session expiry, `root` unwrapping, OBIS extraction |
 | `test_coordinator.py`          | Re-login, backoff, lockout protection, reload window            |
 | `test_sensor.py`               | Units, state classes, value follows the interval                |

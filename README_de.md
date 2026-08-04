@@ -82,6 +82,51 @@ Attribute je Sensor: `obis_code`, `measurement_point`, `quantity`,
 `direction`, `interval_start`, `interval_end`, `interval_minutes`,
 `data_age_minutes`, `intervals_in_window`.
 
+### Abgeleitete Leistungssensoren
+
+Jede Intervallenergie-Line (OBIS `D` = 29) bekommt zusätzlich einen
+**kW-Sensor**, z. B. „Bezug Leistung" und „Einspeisung Leistung". Er trägt die
+mittlere Leistung des jeweils letzten Messintervalls:
+
+    P[kW] = E[kWh] / t[h]
+
+Beim üblichen 15-Minuten-Intervall also schlicht Faktor vier. Ein Wert pro
+Intervall — die Verlaufsgrafik zeigt damit eine echte Leistungskurve statt
+eines einzelnen Tagespeaks.
+
+Das ist keine eigene Näherung. Der portaleigene Endpoint
+
+    /data/timeseries/moment/0/<start>/<value>/<end>/<rkmgId>/<period>
+
+macht serverseitig exakt diese Division — `<value>` ist ein *Eingabewert*, die
+größte Intervallenergie in kWh, und `<rkmgId>` ist die Line-ID aus dem Feld
+`rkmgId` der Zeitreihen-Antwort. Nachgemessen:
+
+| Eingabe (kWh) | Periode  | Ausgabe (kW) |
+|---------------|----------|--------------|
+| 1.1104        | `15mins` | 4.4416       |
+| 2.2208        | `15mins` | 8.8832       |
+| 2.0           | `15mins` | 8            |
+| 1.1104        | `hours`  | 1.1104       |
+
+Da das Intervall ohnehin aus den Zeitstempeln bekannt ist, rechnet die
+Integration lokal, statt pro Wert einen zusätzlichen HTTP-Request zu stellen.
+
+Zähler mit echten Leistungs-Lines (`D` = 4/5/6/7) behalten diese und bekommen
+keinen abgeleiteten Zwilling. Kumulative Zählerstände (`D` = 8/9) werden nicht
+umgerechnet.
+
+### Wo die Min-/Max-Werte stecken
+
+Home Assistant legt Leistungsstatistiken als `mean`/`min`/`max` pro Stunde ab.
+Die abgeleitete kW-Reihe liefert damit Minimum, Maximum und Mittelwert je
+Stunde für jeden beliebigen Zeitraum über die Statistik-Karte — ohne
+zusätzlichen Sensor. Das entspricht dem, was auch das Portal zeigt: fragt man
+die Zeitreihe mit `aggregationperiod=hours` ab, sind die Arrays
+`minima`/`maxima`/`minTimestamps`/`maxTimestamps` gefüllt und enthalten die
+Extremwerte der vier Viertelstunden je Stunde. In der 15-Minuten-Basisauflösung
+bleiben sie leer, weil es dort nichts mehr zu aggregieren gibt.
+
 ## Einheiten und Messgrößen
 
 Die Integration leitet die physikalische Bedeutung jeder Line aus dem
@@ -145,6 +190,10 @@ Werte werden daher pro Stunde aggregiert:
 - Energie-Lines → `sum` (fortlaufende Gesamtsumme, Energy-Dashboard-tauglich)
 - Leistungs-Lines → `mean` / `min` / `max`
 
+Jede Intervallenergie-Line liefert zwei Reihen: ihre Energie unter
+`mitnetz_edm:<line_id>` und die abgeleitete Leistung unter
+`mitnetz_edm:<line_id>_power`.
+
 Das Nachladefenster überlappt bewusst mit bereits geschriebenen Stunden, damit
 verspätete Messwerte korrigiert werden. Die Summenberechnung setzt dabei an
 der Stunde *vor* dem Importfenster an, sodass nichts doppelt gezählt wird.
@@ -193,6 +242,8 @@ Assistant geforderte Python-Version (3.13+).
 | Datei                          | Schwerpunkt                                                   |
 |--------------------------------|---------------------------------------------------------------|
 | `test_obis.py`                 | OBIS-Klassifizierung, kW-statt-kWh-Regression                  |
+| `test_power.py`                | kWh-zu-kW-Umrechnung gegen portal-verifizierte Werte           |
+| `test_derived_power_sensor.py` | Abgeleitete kW-Entity, Staleness, eigene Statistik-ID          |
 | `test_api.py`                  | Login/CSRF, XSRF- und XHR-Header, Datumsformat, Sessionablauf, `root`-Knoten, OBIS-Extraktion |
 | `test_coordinator.py`          | Re-Login, Backoff, Sperrschutz, Nachladefenster                |
 | `test_sensor.py`               | Einheiten, State-Classes, Wert folgt dem Intervall             |

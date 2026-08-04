@@ -28,8 +28,9 @@ from .const import (
     LOGIN_RETRY_DELAYS,
     MAX_LOGIN_ATTEMPTS,
 )
-from .obis import classify_line
-from .statistics import async_import_line_statistics
+from .obis import Quantity, classify_line
+from .power import derive_power_points, energy_to_power
+from .statistics import POWER_STATISTIC_SUFFIX, async_import_line_statistics
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -78,6 +79,29 @@ class LineData:
         )
         return age > interval * max_intervals
 
+    @property
+    def effective_interval(self) -> timedelta:
+        """Measurement interval, falling back to the configured default."""
+        return self.interval or timedelta(minutes=FALLBACK_MEASUREMENT_INTERVAL_MIN)
+
+    @property
+    def last_power(self) -> float | None:
+        """Average power of the most recent interval, in kW.
+
+        Only meaningful for interval-energy lines; see :mod:`.power`.
+        """
+        if self.last_value is None:
+            return None
+        return energy_to_power(self.last_value, self.effective_interval)
+
+    @property
+    def power_points(self) -> list[tuple[datetime, float]]:
+        """The whole fetched window converted to ``(timestamp, kW)`` pairs."""
+        return derive_power_points(
+            [(p.timestamp, p.value) for p in self.result.points],
+            self.effective_interval,
+        )
+
 
 @dataclass(slots=True)
 class MitnetzEdmData:
@@ -122,6 +146,8 @@ class MitnetzEdmCoordinator(DataUpdateCoordinator[MitnetzEdmData]):
         self._data = MitnetzEdmData()
         self.measurement_point_count = 0
         self.sensor_count = 0
+        self.line_count = 0
+        self.derived_power_count = 0
         #: Measurement interval detected from the portal data, for diagnostics.
         self.measurement_interval: timedelta | None = None
         self._interval_warning_issued = False
@@ -207,9 +233,18 @@ class MitnetzEdmCoordinator(DataUpdateCoordinator[MitnetzEdmData]):
 
                 self._warn_on_interval_mismatch(line.id, interval)
 
-                await self._async_import_statistics(line.id, line.name, result)
+                await self._async_import_statistics(
+                    line.id, line.name, lines[line.id]
+                )
 
-        self.sensor_count = len(lines)
+        # One sensor per line, plus a derived power sensor for each
+        # interval-energy line (see sensor.MitnetzEdmDerivedPowerSensor).
+        self.line_count = len(lines)
+        self.derived_power_count = sum(
+            classify_line(data.obis_code).quantity is Quantity.ENERGY_INTERVAL
+            for data in lines.values()
+        )
+        self.sensor_count = self.line_count + self.derived_power_count
         self._data = MitnetzEdmData(
             points=points,
             lines=lines,
@@ -253,14 +288,20 @@ class MitnetzEdmCoordinator(DataUpdateCoordinator[MitnetzEdmData]):
         )
 
     async def _async_import_statistics(
-        self, line_id: str, obis_code: str, result: TimeseriesResult
+        self, line_id: str, obis_code: str, line_data: LineData
     ) -> None:
         """Write the fetched intervals into long-term statistics.
 
         Each interval keeps its own timestamp, so backfilled data lands in the
         hour it belongs to instead of at poll time. Failures here must not take
         the whole update down.
+
+        Interval-energy lines contribute a second series: the average power
+        derived from them. Home Assistant stores power statistics as
+        mean/min/max per hour, which is what makes a per-hour peak query
+        possible at all - the energy series alone can only be summed.
         """
+        result = line_data.result
         if not result.points:
             return
 
@@ -276,6 +317,23 @@ class MitnetzEdmCoordinator(DataUpdateCoordinator[MitnetzEdmData]):
             )
         except Exception:  # noqa: BLE001 - statistics are best-effort
             _LOGGER.exception("Failed to import statistics for line %s", line_id)
+
+        if classification.quantity is not Quantity.ENERGY_INTERVAL:
+            return
+
+        try:
+            await async_import_line_statistics(
+                self.hass,
+                line_id=line_id,
+                display_name=f"{classification.display_name} Leistung",
+                quantity=Quantity.POWER,
+                points=line_data.power_points,
+                suffix=POWER_STATISTIC_SUFFIX,
+            )
+        except Exception:  # noqa: BLE001 - statistics are best-effort
+            _LOGGER.exception(
+                "Failed to import power statistics for line %s", line_id
+            )
 
     def _compute_start(self, line_id: str, now: datetime) -> datetime:
         """Compute the fetch start = last known timestamp - overlap, or the

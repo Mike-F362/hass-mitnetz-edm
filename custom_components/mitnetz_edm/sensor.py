@@ -17,7 +17,7 @@ from homeassistant.util import dt as dt_util
 
 from .const import DOMAIN
 from .coordinator import LineData, MitnetzEdmCoordinator
-from .obis import LineClassification, Quantity, classify_line
+from .obis import UNIT_KW, LineClassification, Quantity, classify_line
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -48,11 +48,22 @@ async def async_setup_entry(
     def _add_new_entities() -> None:
         if not coordinator.data:
             return
-        new_entities = [
-            MitnetzEdmLineSensor(coordinator, entry, line_id, line_data)
-            for line_id, line_data in coordinator.data.lines.items()
-            if line_id not in known_line_ids
-        ]
+        new_entities: list[SensorEntity] = []
+        for line_id, line_data in coordinator.data.lines.items():
+            if line_id in known_line_ids:
+                continue
+            new_entities.append(
+                MitnetzEdmLineSensor(coordinator, entry, line_id, line_data)
+            )
+            # An interval-energy line also yields an average-power reading.
+            if classify_line(line_data.obis_code).quantity is (
+                Quantity.ENERGY_INTERVAL
+            ):
+                new_entities.append(
+                    MitnetzEdmDerivedPowerSensor(
+                        coordinator, entry, line_id, line_data
+                    )
+                )
         known_line_ids.update(coordinator.data.lines)
         if new_entities:
             async_add_entities(new_entities)
@@ -178,4 +189,108 @@ class MitnetzEdmLineSensor(CoordinatorEntity[MitnetzEdmCoordinator], SensorEntit
                 round(age.total_seconds() / 60, 1) if age is not None else None
             ),
             "intervals_in_window": len(line_data.result.points),
+        }
+
+
+class MitnetzEdmDerivedPowerSensor(
+    CoordinatorEntity[MitnetzEdmCoordinator], SensorEntity
+):
+    """Average power of the most recent interval, derived from interval energy.
+
+    Load-profile lines report kWh *per measurement interval*; dividing by the
+    interval length gives the average power during it (see :mod:`.power`). The
+    portal itself offers no per-interval power line for such meters - its
+    ``/data/timeseries/moment/...`` endpoint performs exactly this division
+    server-side - so deriving it locally is both equivalent and cheaper.
+
+    One value per measurement interval, which is what makes a real power curve
+    in the history graph possible rather than a single daily peak figure.
+    """
+
+    _attr_has_entity_name = True
+    _attr_device_class = SensorDeviceClass.POWER
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_native_unit_of_measurement = UNIT_KW
+    _attr_suggested_display_precision = 3
+
+    def __init__(
+        self,
+        coordinator: MitnetzEdmCoordinator,
+        entry: ConfigEntry,
+        line_id: str,
+        line_data: LineData,
+    ) -> None:
+        super().__init__(coordinator)
+        self._entry = entry
+        self._line_id = line_id
+
+        classification = classify_line(line_data.obis_code)
+        self._classification = classification
+
+        self._attr_unique_id = f"{entry.entry_id}_{line_id}_power"
+        self._attr_name = f"{classification.display_name} Leistung"
+
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, entry.entry_id)},
+            name="Mitnetz Strom EDM",
+            manufacturer="Mitnetz Strom",
+            model="EDM Smartmeter-Portal",
+            entry_type="service",
+        )
+
+    @property
+    def _line_data(self) -> LineData | None:
+        if not self.coordinator.data:
+            return None
+        return self.coordinator.data.lines.get(self._line_id)
+
+    @property
+    def native_value(self) -> float | None:
+        """Average power of the most recent interval, in kW.
+
+        Subject to the same staleness rule as any other power figure: a demand
+        value belongs to one interval and must not be carried forward.
+        """
+        line_data = self._line_data
+        if line_data is None:
+            return None
+
+        if line_data.is_stale(dt_util.utcnow(), self.coordinator.stale_intervals):
+            return None
+
+        return line_data.last_power
+
+    @property
+    def available(self) -> bool:
+        return super().available and self._line_data is not None
+
+    @property
+    def extra_state_attributes(self) -> dict[str, str | int | float | None]:
+        line_data = self._line_data
+        if line_data is None:
+            return {}
+
+        interval = line_data.effective_interval
+        age = line_data.age(dt_util.utcnow())
+
+        return {
+            "obis_code": line_data.obis_code,
+            "measurement_point": line_data.point_id,
+            "direction": self._classification.direction.value,
+            "derived_from": "interval_energy",
+            "interval_energy_kwh": line_data.last_value,
+            "interval_start": (
+                line_data.last_timestamp.isoformat()
+                if line_data.last_timestamp
+                else None
+            ),
+            "interval_end": (
+                line_data.interval_end.isoformat()
+                if line_data.interval_end
+                else None
+            ),
+            "interval_minutes": round(interval.total_seconds() / 60, 1),
+            "data_age_minutes": (
+                round(age.total_seconds() / 60, 1) if age is not None else None
+            ),
         }
