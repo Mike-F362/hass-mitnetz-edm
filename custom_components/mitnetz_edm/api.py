@@ -320,18 +320,41 @@ class MitnetzEdmApiClient:
 
     @staticmethod
     def _parse_timeseries_payload(data: Any) -> list[TimeseriesPoint]:
-        """Normalise the various shapes the API may return into a flat point list."""
+        """Normalise the various shapes the API may return into a flat point list.
+
+        Points are always anchored to the *start* of their measurement interval.
+        That matters because the portal is not: its ``timestamps`` array holds
+        the interval **end**, and it ships a parallel ``timestampsLeft`` array
+        with the start. Its own report confirms the convention - a value of
+        0.803275 kWh covering 14:00-14:15 is listed with "Maximum time 14:15".
+
+        Reading ``timestamps`` and treating it as the start pushes every value
+        one interval into the future: the sensor attributes are wrong, and an
+        interval falling on an hour boundary is aggregated into the following
+        hour of long-term statistics.
+        """
         points: list[TimeseriesPoint] = []
 
         # Expected common shapes:
-        # 1) {"timestamps": [...], "values": [...]}
+        # 1) {"timestamps": [...], "values": [...]}  (plus "timestampsLeft")
         # 2) [{"timestamp": ..., "value": ...}, ...]
         # 3) {"data": [{"x": ..., "y": ...}, ...]}
         if isinstance(data, dict) and "timestamps" in data and "values" in data:
-            for ts, value in zip(data["timestamps"], data["values"], strict=False):
+            # Prefer the explicit start edge when the portal supplies it.
+            starts = data.get("timestampsLeft")
+            ends = data["timestamps"]
+            use_starts = isinstance(starts, list) and len(starts) == len(ends)
+
+            for ts, value in zip(starts if use_starts else ends, data["values"], strict=False):
                 parsed = MitnetzEdmApiClient._parse_point(ts, value)
                 if parsed is not None:
                     points.append(parsed)
+
+            if not use_starts:
+                # Older or reduced payloads omit timestampsLeft. The timestamps
+                # are still interval ends, so shift them back by the interval
+                # length, which can only be measured once all points are parsed.
+                points = MitnetzEdmApiClient._shift_ends_to_starts(points)
         elif isinstance(data, dict) and "data" in data and isinstance(data["data"], list):
             for row in data["data"]:
                 ts = row.get("timestamp") or row.get("x") or row.get("t")
@@ -355,6 +378,36 @@ class MitnetzEdmApiClient:
             _LOGGER.warning("Unrecognised timeseries payload shape: %s", type(data))
 
         return points
+
+    @staticmethod
+    def _shift_ends_to_starts(
+        points: list[TimeseriesPoint],
+    ) -> list[TimeseriesPoint]:
+        """Move interval-end timestamps back onto the interval start.
+
+        Uses the median gap so a single missing interval or a DST jump does not
+        distort the shift. With fewer than two points the interval is unknown
+        and the timestamps are left untouched: guessing 15 minutes would be a
+        silent, invisible error, whereas leaving them alone is at worst the
+        behaviour we already had.
+        """
+        if len(points) < 2:
+            return points
+
+        ordered = sorted(points, key=lambda p: p.timestamp)
+        gaps = sorted(
+            (later.timestamp - earlier.timestamp).total_seconds()
+            for earlier, later in zip(ordered, ordered[1:], strict=False)
+        )
+        gaps = [gap for gap in gaps if gap > 0]
+        if not gaps:
+            return points
+
+        interval = timedelta(seconds=gaps[len(gaps) // 2])
+        return [
+            TimeseriesPoint(timestamp=p.timestamp - interval, value=p.value)
+            for p in points
+        ]
 
     @staticmethod
     def _parse_point(ts: Any, value: Any) -> TimeseriesPoint | None:

@@ -24,7 +24,8 @@ using `aiohttp` — no Selenium, no Playwright, no browser.
    is extracted from `details."measured quantity"` (or, failing that, from the
    part of `name` before the first comma).
 3. **Timeseries**: `GET /data/mpline/genericto/<mp>/<line>/<from>/<to>/base`
-   returns the actual readings.
+   returns the actual readings. The last path segment is the aggregation:
+   `base` (native resolution), `hours`, `days` and so on.
 4. **Session recovery**: on 401/403, a redirect to `/login`, or HTML where JSON
    was expected, the client logs in again (max. 3 attempts, backoff
    5 s / 15 s / 30 s). Once those are exhausted no further login attempts are
@@ -143,6 +144,26 @@ produced the nonsensical staircase graphs.
 
 ## Measurement intervals, freshness and the history graph
 
+### Which edge of the interval a timestamp names
+
+The portal labels an interval by its **end**. Its own CSV export makes this
+explicit: a value of 0.803275 kWh listed for the row "14:00:00 – 14:15:00"
+appears in the summary as "local maximum 0.803275 kWh, Maximum time 14:15".
+
+The JSON response carries both edges — `timestampsLeft` (start) and
+`timestamps` (end); in a captured response the two differ by exactly one
+interval for all 157 points. The integration anchors every point to the
+**start**, preferring `timestampsLeft` and falling back to shifting
+`timestamps` back by the median gap when that field is absent.
+
+This matters more than it looks. Reading `timestamps` and treating it as the
+start pushes every value one interval into the future, so the Home Assistant
+curve trails the portal's chart, and an interval landing on an hour boundary
+(14:45–15:00, labelled 15:00) is aggregated into the *following* hour of
+long-term statistics.
+
+### Interval detection
+
 The measurement interval is derived from the timestamps in the portal data
 (median of the gaps, so a single missing interval or a DST jump does not skew
 the result).
@@ -227,12 +248,15 @@ pytest tests/ --cov=custom_components.mitnetz_edm
 
 The suite runs against a real Home Assistant instance (including the recorder)
 via `pytest-homeassistant-custom-component`, which requires the Python version
-Home Assistant itself requires (3.13+).
+Home Assistant itself requires (3.13+). HTTP is faked with that package's own
+`aioclient_mock` fixture rather than `aioresponses`, which broke when aiohttp
+changed an internal signature.
 
 | File                           | Focus                                                          |
 |--------------------------------|----------------------------------------------------------------|
 | `test_obis.py`                 | OBIS classification, the kW-instead-of-kWh regression           |
 | `test_power.py`                | Energy-to-power conversion against portal-verified values       |
+| `test_interval_edges.py`       | Points anchored to the interval start, checked against a capture |
 | `test_derived_power_sensor.py` | Derived kW entity, staleness, separate statistics id            |
 | `test_api.py`                  | Login/CSRF, XSRF and XHR headers, date format, session expiry, `root` unwrapping, OBIS extraction |
 | `test_coordinator.py`          | Re-login, backoff, lockout protection, reload window            |

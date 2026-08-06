@@ -1,3 +1,5 @@
 pytest-homeassistant-custom-component
-aioresponses
 pytest-cov
+# HTTP is faked with aioclient_mock from pytest-homeassistant-custom-component,
+# not aioresponses: the latter touches aiohttp.ClientResponse internals and broke
+# when aiohttp made stream_writer a required argument.

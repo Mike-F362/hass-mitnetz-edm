@@ -151,6 +151,27 @@ erzeugt unsinnige Treppenkurven.
 
 ## Messintervalle, Aktualität und Verlaufsgrafik
 
+### Welche Intervallkante ein Zeitstempel benennt
+
+Das Portal benennt ein Intervall nach seinem **Ende**. Sein eigener CSV-Export
+sagt das unmissverständlich: ein Wert von 0.803275 kWh, der in der Zeile
+„14:00:00 – 14:15:00" steht, taucht in der Übersicht als „local maximum
+0.803275 kWh, Maximum time 14:15" auf.
+
+Die JSON-Antwort liefert beide Kanten — `timestampsLeft` (Beginn) und
+`timestamps` (Ende); in einer aufgezeichneten Antwort unterscheiden sie sich
+bei allen 157 Punkten um exakt ein Intervall. Die Integration verankert jeden
+Punkt am **Beginn**: bevorzugt über `timestampsLeft`, ersatzweise durch
+Zurückschieben von `timestamps` um den Medianabstand.
+
+Das ist folgenreicher als es aussieht. Liest man `timestamps` und behandelt es
+als Beginn, rutscht jeder Wert ein Intervall in die Zukunft — die
+HA-Kurve läuft der Portalgrafik hinterher, und ein Intervall auf einer vollen
+Stunde (14:45–15:00, benannt als 15:00) wird in die *nächste* Stunde der
+Langzeitstatistik einsortiert.
+
+### Intervallerkennung
+
 Das Messintervall wird automatisch aus den Zeitstempeln der Portaldaten
 abgeleitet (Median der Abstände, damit einzelne Lücken oder ein
 Zeitumstellungssprung das Ergebnis nicht verfälschen).
@@ -237,12 +258,15 @@ pytest tests/ --cov=custom_components.mitnetz_edm
 
 Die Suite läuft über `pytest-homeassistant-custom-component` gegen eine echte
 Home-Assistant-Instanz (inkl. Recorder) und benötigt daher die von Home
-Assistant geforderte Python-Version (3.13+).
+Assistant geforderte Python-Version (3.13+). HTTP wird mit dem `aioclient_mock`
+aus demselben Paket simuliert statt mit `aioresponses`, das an einer internen
+aiohttp-Signaturänderung zerbrochen ist.
 
 | Datei                          | Schwerpunkt                                                   |
 |--------------------------------|---------------------------------------------------------------|
 | `test_obis.py`                 | OBIS-Klassifizierung, kW-statt-kWh-Regression                  |
 | `test_power.py`                | kWh-zu-kW-Umrechnung gegen portal-verifizierte Werte           |
+| `test_interval_edges.py`       | Punkte am Intervallbeginn, geprüft gegen echte Portalantwort   |
 | `test_derived_power_sensor.py` | Abgeleitete kW-Entity, Staleness, eigene Statistik-ID          |
 | `test_api.py`                  | Login/CSRF, XSRF- und XHR-Header, Datumsformat, Sessionablauf, `root`-Knoten, OBIS-Extraktion |
 | `test_coordinator.py`          | Re-Login, Backoff, Sperrschutz, Nachladefenster                |
