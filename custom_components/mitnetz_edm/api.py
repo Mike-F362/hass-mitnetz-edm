@@ -26,7 +26,6 @@ import aiohttp
 from yarl import URL
 
 from .const import (
-    ANALYTICS_URL,
     LOGIN_CHECK_URL,
     LOGIN_PAGE_URL,
     MEASUREMENT_POINTS_URL,
