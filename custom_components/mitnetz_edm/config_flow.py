@@ -156,7 +156,7 @@ class MitnetzEdmConfigFlow(ConfigFlow, domain=DOMAIN):
         )
 
     @staticmethod
-    def async_get_options_flow(config_entry: ConfigEntry) -> OptionsFlow:
+    def async_get_options_flow(_config_entry: ConfigEntry) -> OptionsFlow:
         from .options_flow import MitnetzEdmOptionsFlow
 
         return MitnetzEdmOptionsFlow()
