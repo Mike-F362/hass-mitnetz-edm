@@ -48,7 +48,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: MitnetzEdmConfigEntry) -
     )
 
     timeout = entry.options.get(CONF_TIMEOUT, DEFAULT_TIMEOUT_SEC)
-    api = MitnetzEdmApiClient(
+    api_client = MitnetzEdmApiClient(
         session=session,
         username=entry.data[CONF_USERNAME],
         password=entry.data[CONF_PASSWORD],
@@ -64,10 +64,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: MitnetzEdmConfigEntry) -
         )
     )
 
-    coordinator = MitnetzEdmCoordinator(
+    edm_coordinator = MitnetzEdmCoordinator(
         hass,
         config_entry=entry,
-        api=api,
+        api=api_client,
         update_interval=update_interval,
         reload_window=reload_window,
         stale_intervals=entry.options.get(
@@ -75,9 +75,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: MitnetzEdmConfigEntry) -
         ),
     )
 
-    await coordinator.async_config_entry_first_refresh()
+    await edm_coordinator.async_config_entry_first_refresh()
 
-    entry.runtime_data = MitnetzEdmRuntimeData(api=api, coordinator=coordinator)
+    entry.runtime_data = MitnetzEdmRuntimeData(api=api_client, coordinator=edm_coordinator)
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.async_on_unload(entry.add_update_listener(async_update_listener))
