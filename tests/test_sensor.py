@@ -28,9 +28,9 @@ def _env(integration_env):
     yield
 
 
-ENTITY_BEZUG = "sensor.mitnetz_strom_edm_bezug"
-ENTITY_EINSPEISUNG = "sensor.mitnetz_strom_edm_einspeisung"
-ENTITY_MAX = "sensor.mitnetz_strom_edm_einspeisung_maximum"
+ENTITY_IMPORT = "sensor.mitnetz_strom_edm_import"
+ENTITY_EXPORT = "sensor.mitnetz_strom_edm_export"
+ENTITY_MAX = "sensor.mitnetz_strom_edm_export_maximum"
 
 
 async def test_all_lines_create_sensors(hass, init_integration):
@@ -50,7 +50,7 @@ async def test_all_lines_create_sensors(hass, init_integration):
 
 async def test_energy_line_units(hass, init_integration):
     """Interval energy lines are kWh."""
-    state = hass.states.get(ENTITY_BEZUG)
+    state = hass.states.get(ENTITY_IMPORT)
     assert state is not None
     assert state.attributes[ATTR_UNIT_OF_MEASUREMENT] == "kWh"
     assert state.attributes[ATTR_DEVICE_CLASS] == "energy"
@@ -72,7 +72,7 @@ async def test_maximum_demand_is_not_total_increasing(hass, init_integration):
 
 async def test_interval_energy_is_not_total_increasing(hass, init_integration):
     """Per-interval kWh also rises and falls, so it is a measurement."""
-    state = hass.states.get(ENTITY_BEZUG)
+    state = hass.states.get(ENTITY_IMPORT)
     assert state.attributes[ATTR_STATE_CLASS] == SensorStateClass.MEASUREMENT
 
 
@@ -85,8 +85,8 @@ async def test_state_is_latest_interval_not_window_aggregate(hass, init_integrat
 
 
 async def test_each_line_gets_its_own_value(hass, init_integration):
-    assert float(hass.states.get(ENTITY_BEZUG).state) == 0.42
-    assert float(hass.states.get(ENTITY_EINSPEISUNG).state) == 0.20
+    assert float(hass.states.get(ENTITY_IMPORT).state) == 0.42
+    assert float(hass.states.get(ENTITY_EXPORT).state) == 0.20
     assert float(hass.states.get(ENTITY_MAX).state) == 0.65
 
 

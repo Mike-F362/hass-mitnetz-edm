@@ -138,8 +138,11 @@ export, "Einspeisung"), which is combined into the display name, e.g.
 `1-1:2.6.0` → "Export Maximum".
 
 All display names are English and collected in `const.py` (`NAME_*`), so they
-can be reviewed and changed in one place. Renaming them leaves entity IDs and
-recorded history intact, because the entity registry is keyed by unique ID.
+can be reviewed and changed in one place. On an existing installation renaming
+them changes only the displayed name: entity IDs and recorded history survive,
+because the entity registry is keyed by unique ID. A *fresh* installation
+derives its entity IDs from the new names, so the two can differ between
+installs — refer to entities by their ID, not by name, in automations.
 
 This matters: maximum and average lines are **power figures in kW** that rise
 *and fall* every measurement interval. Publishing them as `total_increasing`
@@ -290,4 +293,4 @@ Developed with the assistance of Claude (Anthropic).
 ## Licence
 
 [MIT](LICENSE). MITNETZ STROM and its logo are trademarks of MITNETZ STROM GmbH;
-the licence grants no rights to those marks.
+the licence grants no rights to those marks — see [NOTICE](NOTICE).

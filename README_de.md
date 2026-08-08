@@ -145,9 +145,12 @@ Das C-Feld bestimmt die Richtung (`1` = Bezug, `2` = Einspeisung); daraus
 entsteht der Anzeigename, z. B. `1-1:2.6.0` → „Export Maximum".
 
 Die Anzeigenamen sind durchgehend englisch und in `const.py` gesammelt
-(`NAME_*`), lassen sich also an einer Stelle prüfen und ändern. Ein Umbenennen
-lässt Entity-IDs und aufgezeichnete Historie unberührt, weil die
-Entity-Registry über die Unique-ID geführt wird.
+(`NAME_*`), lassen sich also an einer Stelle prüfen und ändern. Auf einer
+bestehenden Installation ändert ein Umbenennen nur den angezeigten Namen:
+Entity-IDs und aufgezeichnete Historie bleiben erhalten, weil die
+Entity-Registry über die Unique-ID geführt wird. Eine *neue* Installation
+leitet ihre Entity-IDs dagegen aus den neuen Namen ab — sprich Entitäten in
+Automationen deshalb über ihre ID an, nicht über den Namen.
 
 Wichtig: Maximum- und Mittelwert-Lines sind **Leistungswerte in kW**, die pro
 Messintervall steigen *und fallen*. Würden sie als `total_increasing`
@@ -302,4 +305,5 @@ Entwickelt mit Unterstützung von Claude (Anthropic).
 ## Lizenz
 
 [MIT](LICENSE). MITNETZ STROM und das zugehörige Logo sind Marken der
-MITNETZ STROM GmbH; die Lizenz räumt daran keine Rechte ein.
+MITNETZ STROM GmbH; die Lizenz räumt daran keine Rechte ein — siehe
+[NOTICE](NOTICE).

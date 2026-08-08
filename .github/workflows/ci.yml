@@ -27,8 +27,8 @@ jobs:
     name: Ruff
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - run: pip install ruff
@@ -41,7 +41,7 @@ jobs:
     name: Hassfest
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       # Home Assistant's own manifest/strings validator. Catches a malformed
       # manifest.json, missing translation keys and unknown iot_class values.
       - uses: home-assistant/actions/hassfest@master
@@ -50,20 +50,20 @@ jobs:
     name: HACS
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: hacs/action@main
         with:
           category: integration
-          # The brands check wants the icon to exist in home-assistant/brands.
-          # Drop this ignore once that pull request is merged.
+          # brands: the check wants the icon to exist in home-assistant/brands.
+          # Drop this once that pull request is merged.
           ignore: brands
 
   test:
     name: Pytest
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip

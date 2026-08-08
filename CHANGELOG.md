@@ -17,6 +17,8 @@ and recorded history.
 - `pyproject.toml` with ruff and mypy configuration, and a GitHub Actions
   workflow running ruff, hassfest, HACS validation and the test suite.
 - `hacs.json` declaring the minimum Home Assistant version.
+- `NOTICE` carrying the trademark statement, so `LICENSE` stays a verbatim MIT
+  text that GitHub's licence detection recognises.
 
 ### Changed
 

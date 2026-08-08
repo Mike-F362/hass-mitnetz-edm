@@ -279,4 +279,4 @@ async def test_entry_unloads_cleanly(hass, init_integration):
 
     assert init_integration.state is ConfigEntryState.NOT_LOADED
     # Home Assistant keeps a restored placeholder state after unloading.
-    assert hass.states.get("sensor.mitnetz_strom_edm_bezug").state == STATE_UNAVAILABLE
+    assert hass.states.get("sensor.mitnetz_strom_edm_import").state == STATE_UNAVAILABLE
