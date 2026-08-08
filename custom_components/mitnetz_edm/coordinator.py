@@ -23,6 +23,7 @@ from .api import (
 )
 from .const import (
     DEFAULT_STALE_INTERVALS,
+    DEVICE_NAME,
     DOMAIN,
     FALLBACK_MEASUREMENT_INTERVAL_MIN,
     LOGIN_RETRY_DELAYS,
@@ -192,13 +193,12 @@ class MitnetzEdmCoordinator(DataUpdateCoordinator[MitnetzEdmData]):
         pn_create(
             self.hass,
             (
-                "Die Anmeldung beim Mitnetz-EDM-Portal ist wiederholt "
-                "fehlgeschlagen. Es werden vorerst keine weiteren "
-                "Login-Versuche unternommen, um eine Sperrung des Kontos zu "
-                "vermeiden. Bitte Zugangsdaten prüfen und die Integration "
-                "danach manuell neu laden."
+                f"Signing in to the {DEVICE_NAME} portal failed repeatedly. No "
+                "further login attempts will be made for now, to avoid locking "
+                "the account out. Check the credentials via Reconfigure, then "
+                "reload the integration."
             ),
-            title="Mitnetz EDM: Anmeldung fehlgeschlagen",
+            title=f"{DEVICE_NAME}: login failed",
             notification_id=f"{DOMAIN}_login_failed",
         )
         raise UpdateFailed(

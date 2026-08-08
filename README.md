@@ -270,3 +270,12 @@ changed an internal signature.
 | `test_statistics_import.py`    | Writing to the recorder, no double counting                     |
 | `test_config_flow.py`          | Setup, error cases, options flow, reconfigure flow              |
 | `test_diagnostics_services.py` | Diagnostics without credentials, `import_history`               |
+
+## Acknowledgements
+
+Developed with the assistance of Claude (Anthropic).
+
+## Licence
+
+[MIT](LICENSE). MITNETZ STROM and its logo are trademarks of MITNETZ STROM GmbH;
+the licence grants no rights to those marks.

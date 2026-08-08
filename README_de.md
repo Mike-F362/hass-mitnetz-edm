@@ -281,3 +281,12 @@ aiohttp-Signaturänderung zerbrochen ist.
 | `test_statistics_import.py`    | Schreiben in den Recorder, keine Doppelzählung                 |
 | `test_config_flow.py`          | Einrichtung, Fehlerfälle, Options-Flow, Reconfigure-Flow       |
 | `test_diagnostics_services.py` | Diagnostics ohne Zugangsdaten, `import_history`                |
+
+## Danksagung
+
+Entwickelt mit Unterstützung von Claude (Anthropic).
+
+## Lizenz
+
+[MIT](LICENSE). MITNETZ STROM und das zugehörige Logo sind Marken der
+MITNETZ STROM GmbH; die Lizenz räumt daran keine Rechte ein.
