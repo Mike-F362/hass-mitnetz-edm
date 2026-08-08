@@ -4,6 +4,7 @@ The central regression these guard: a maximum-demand line must appear as a kW
 power sensor whose value follows the latest measurement interval, instead of a
 kWh energy total that Home Assistant treats as monotonically rising.
 """
+
 from __future__ import annotations
 
 from homeassistant.components.sensor import ATTR_STATE_CLASS, SensorStateClass
@@ -13,15 +14,13 @@ from homeassistant.const import (
     STATE_UNAVAILABLE,
 )
 from homeassistant.helpers import entity_registry as er
-
 import pytest
 
 from .conftest import (
-    LINE_BEZUG,
-    LINE_EINSPEISUNG,
     LINE_MAX_EINSPEISUNG,
     make_series,
 )
+
 
 @pytest.fixture(autouse=True)
 def _env(integration_env):

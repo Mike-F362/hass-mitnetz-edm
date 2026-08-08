@@ -271,6 +271,18 @@ changed an internal signature.
 | `test_config_flow.py`          | Setup, error cases, options flow, reconfigure flow              |
 | `test_diagnostics_services.py` | Diagnostics without credentials, `import_history`               |
 
+## Development
+
+```bash
+ruff check .          # lint
+ruff format .         # format
+pytest -m "not live"  # the offline suite
+```
+
+Ruff and mypy are configured in `pyproject.toml`. CI runs ruff, hassfest, HACS
+validation and the tests on every push and pull request, plus weekly — Home
+Assistant releases monthly and hassfest rules change with it.
+
 ## Acknowledgements
 
 Developed with the assistance of Claude (Anthropic).

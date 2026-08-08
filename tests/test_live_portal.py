@@ -13,14 +13,15 @@ in the repository.
 These tests assert *structure*, never values: they are a canary for the portal
 changing its response shape, which is what broke the integration before.
 """
+
 from __future__ import annotations
 
-import json
 from datetime import timedelta
+import json
 from pathlib import Path
 
-import pytest
 from homeassistant.util import dt as dt_util
+import pytest
 
 from custom_components.mitnetz_edm.api import MitnetzEdmApiClient
 from custom_components.mitnetz_edm.obis import Quantity, classify_line

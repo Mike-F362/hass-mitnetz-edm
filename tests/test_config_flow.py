@@ -1,12 +1,14 @@
 """Integration tests for the config and options flow."""
+
 from __future__ import annotations
 
 from unittest.mock import AsyncMock, patch
 
-import pytest
 from homeassistant.config_entries import SOURCE_USER
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 from homeassistant.data_entry_flow import FlowResultType
+import pytest
+import voluptuous as vol
 
 from custom_components.mitnetz_edm.api import MitnetzApiError, MitnetzAuthError
 from custom_components.mitnetz_edm.const import (
@@ -153,7 +155,8 @@ async def test_out_of_range_values_rejected(hass, mock_flow_client, field, value
     )
     bad_input = {**USER_INPUT, field: value}
 
-    with pytest.raises(Exception):
+    # voluptuous rejects the value before the flow ever sees it.
+    with pytest.raises(vol.Invalid):
         await hass.config_entries.flow.async_configure(result["flow_id"], bad_input)
 
 
@@ -199,7 +202,9 @@ async def test_options_change_applies_to_coordinator(hass, init_integration):
 # ------------------------------------------------------------ reconfigure ---
 
 
-async def test_reconfigure_updates_credentials(hass, init_integration, mock_flow_client):
+async def test_reconfigure_updates_credentials(
+    hass, init_integration, mock_flow_client
+):
     """Rotated credentials must be fixable without losing the entity history."""
     result = await init_integration.start_reconfigure_flow(hass)
     assert result["type"] is FlowResultType.FORM

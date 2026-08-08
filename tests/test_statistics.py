@@ -3,6 +3,7 @@
 Interval data arrives backfilled, so each value must land in the hour it was
 measured rather than at poll time.
 """
+
 from __future__ import annotations
 
 from datetime import datetime, timedelta

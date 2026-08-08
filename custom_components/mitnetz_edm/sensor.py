@@ -1,4 +1,5 @@
 """Sensor platform for the Mitnetz Strom EDM integration."""
+
 from __future__ import annotations
 
 import logging
@@ -28,12 +29,17 @@ from .obis import UNIT_KW, LineClassification, Quantity, classify_line
 _LOGGER = logging.getLogger(__name__)
 
 #: Quantity -> (device class, state class).
-_QUANTITY_CLASSES: dict[Quantity, tuple[SensorDeviceClass | None, SensorStateClass | None]] = {
+_QUANTITY_CLASSES: dict[
+    Quantity, tuple[SensorDeviceClass | None, SensorStateClass | None]
+] = {
     # A per-interval kWh figure that rises and falls: it is *not* a cumulative
     # register, so MEASUREMENT is correct here. The Energy Dashboard is fed
     # from long-term statistics instead (see statistics.py).
     Quantity.ENERGY_INTERVAL: (SensorDeviceClass.ENERGY, SensorStateClass.MEASUREMENT),
-    Quantity.ENERGY_TOTAL: (SensorDeviceClass.ENERGY, SensorStateClass.TOTAL_INCREASING),
+    Quantity.ENERGY_TOTAL: (
+        SensorDeviceClass.ENERGY,
+        SensorStateClass.TOTAL_INCREASING,
+    ),
     # Maximum/average demand in kW - fluctuates per interval.
     Quantity.POWER: (SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT),
     Quantity.UNKNOWN: (None, None),
@@ -66,9 +72,7 @@ async def async_setup_entry(
                 Quantity.ENERGY_INTERVAL
             ):
                 new_entities.append(
-                    MitnetzEdmDerivedPowerSensor(
-                        coordinator, entry, line_id, line_data
-                    )
+                    MitnetzEdmDerivedPowerSensor(coordinator, entry, line_id, line_data)
                 )
         known_line_ids.update(coordinator.data.lines)
         if new_entities:
@@ -162,10 +166,12 @@ class MitnetzEdmLineSensor(CoordinatorEntity[MitnetzEdmCoordinator], SensorEntit
 
     @property
     def available(self) -> bool:
+        """Whether the coordinator still reports this line."""
         return super().available and self._line_data is not None
 
     @property
     def extra_state_attributes(self) -> dict[str, str | int | float | None]:
+        """Expose the interval this value belongs to, and how old it is."""
         line_data = self._line_data
         if line_data is None:
             return {}
@@ -184,9 +190,7 @@ class MitnetzEdmLineSensor(CoordinatorEntity[MitnetzEdmCoordinator], SensorEntit
                 else None
             ),
             "interval_end": (
-                line_data.interval_end.isoformat()
-                if line_data.interval_end
-                else None
+                line_data.interval_end.isoformat() if line_data.interval_end else None
             ),
             "interval_minutes": (
                 round(interval.total_seconds() / 60, 1) if interval else None
@@ -268,10 +272,12 @@ class MitnetzEdmDerivedPowerSensor(
 
     @property
     def available(self) -> bool:
+        """Whether the coordinator still reports this line."""
         return super().available and self._line_data is not None
 
     @property
     def extra_state_attributes(self) -> dict[str, str | int | float | None]:
+        """Expose the interval this value belongs to, and how old it is."""
         line_data = self._line_data
         if line_data is None:
             return {}
@@ -291,9 +297,7 @@ class MitnetzEdmDerivedPowerSensor(
                 else None
             ),
             "interval_end": (
-                line_data.interval_end.isoformat()
-                if line_data.interval_end
-                else None
+                line_data.interval_end.isoformat() if line_data.interval_end else None
             ),
             "interval_minutes": round(interval.total_seconds() / 60, 1),
             "data_age_minutes": (

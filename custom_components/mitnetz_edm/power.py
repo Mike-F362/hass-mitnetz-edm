@@ -27,6 +27,7 @@ extra HTTP request per value.
 
 Kept free of Home Assistant imports so it can be unit-tested standalone.
 """
+
 from __future__ import annotations
 
 from datetime import datetime, timedelta
@@ -44,6 +45,7 @@ def energy_to_power(energy_kwh: float, interval: timedelta) -> float | None:
 
     Returns:
         Average power in kW, or ``None`` if the interval is not positive.
+
     """
     seconds = interval.total_seconds()
     if seconds <= _MIN_INTERVAL_SECONDS:
@@ -67,6 +69,7 @@ def derive_power_points(
     Returns:
         ``(timestamp, power_kw)`` pairs in the same order, skipping any point
         that cannot be converted.
+
     """
     derived: list[tuple[datetime, float]] = []
     for timestamp, energy in points:

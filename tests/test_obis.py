@@ -4,6 +4,7 @@ These are the tests that pin down the bug behind the nonsensical graphs: a
 maximum-demand line must come out as a kW power reading, not a kWh energy
 total.
 """
+
 from __future__ import annotations
 
 import pytest

@@ -2,9 +2,10 @@
 
 Pure logic, no Home Assistant instance required.
 """
+
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
@@ -45,7 +46,7 @@ def test_half_hour_interval_uses_factor_two():
 
 def test_derive_power_points_preserves_timestamps_and_order():
     """The power value belongs to the same interval, so timestamps must not shift."""
-    start = datetime(2026, 8, 3, 12, 0, tzinfo=timezone.utc)
+    start = datetime(2026, 8, 3, 12, 0, tzinfo=UTC)
     points = [
         (start, 1.023),
         (start + QUARTER_HOUR, 1.1104),
@@ -59,7 +60,7 @@ def test_derive_power_points_preserves_timestamps_and_order():
 
 
 def test_derive_power_points_skips_unconvertible():
-    start = datetime(2026, 8, 3, 12, 0, tzinfo=timezone.utc)
+    start = datetime(2026, 8, 3, 12, 0, tzinfo=UTC)
     assert derive_power_points([(start, 1.0)], timedelta(0)) == []
 
 

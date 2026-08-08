@@ -4,16 +4,16 @@ The important behaviour here is defensive: the portal must not be hammered with
 login attempts, because a locked Mitnetz account is a far worse outcome than a
 temporarily unavailable sensor.
 """
+
 from __future__ import annotations
 
 from datetime import timedelta
 from unittest.mock import AsyncMock, patch
 
-import pytest
 from homeassistant.helpers.update_coordinator import UpdateFailed
+import pytest
 
 from custom_components.mitnetz_edm.api import (
-    MitnetzApiError,
     MitnetzAuthError,
     MitnetzSessionExpiredError,
 )
@@ -23,7 +23,7 @@ from custom_components.mitnetz_edm.const import (
     MAX_LOGIN_ATTEMPTS,
 )
 
-from .conftest import LINE_BEZUG, LINE_MAX_EINSPEISUNG, make_series
+from .conftest import LINE_BEZUG, LINE_MAX_EINSPEISUNG
 
 
 @pytest.fixture(autouse=True)

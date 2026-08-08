@@ -1,4 +1,5 @@
 """Tests for diagnostics output and the import_history service."""
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -65,9 +66,7 @@ async def test_import_history_service_registered(hass, init_integration):
     assert hass.services.has_service(DOMAIN, SERVICE_IMPORT_HISTORY)
 
 
-async def test_import_history_fetches_requested_range(
-    hass, init_integration, mock_api
-):
+async def test_import_history_fetches_requested_range(hass, init_integration, mock_api):
     mock_api.get_timeseries.reset_mock()
     start = datetime(2026, 6, 1, 0, 0, tzinfo=BERLIN)
     end = datetime(2026, 6, 30, 23, 59, tzinfo=BERLIN)

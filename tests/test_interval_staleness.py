@@ -5,9 +5,10 @@ drawn as a flat multi-hour plateau: the interval is derived from the data
 itself, and a value that has aged past the configured number of intervals is
 reported as ``unknown`` rather than carried forward.
 """
+
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
@@ -18,7 +19,7 @@ from custom_components.mitnetz_edm.api import (
 )
 from custom_components.mitnetz_edm.coordinator import LineData
 
-UTC = timezone.utc
+UTC = UTC
 
 
 def _result(timestamps: list[datetime], values: list[float] | None = None):

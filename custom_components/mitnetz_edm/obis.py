@@ -27,11 +27,12 @@ kW figure that rises *and falls* per measurement interval. Publishing it as
 Assistant treat every decrease as a meter reset, which is what produced the
 nonsensical staircase graphs.
 """
+
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
+import re
 
 from .const import (
     NAME_AVERAGE,
@@ -52,7 +53,7 @@ UNIT_KWH = "kWh"
 UNIT_KW = "kW"
 
 
-class Quantity(str, Enum):
+class Quantity(StrEnum):
     """What a measurement line physically represents."""
 
     #: Energy accumulated within one measurement interval (kWh per interval).
@@ -65,7 +66,7 @@ class Quantity(str, Enum):
     UNKNOWN = "unknown"
 
 
-class Direction(str, Enum):
+class Direction(StrEnum):
     """Direction of energy flow."""
 
     IMPORT = "import"  # Bezug
@@ -126,10 +127,12 @@ class LineClassification:
 
     @property
     def is_power(self) -> bool:
+        """Whether the line carries a kW figure."""
         return self.quantity is Quantity.POWER
 
     @property
     def is_energy(self) -> bool:
+        """Whether the line carries a kWh figure, interval or cumulative."""
         return self.quantity in (Quantity.ENERGY_INTERVAL, Quantity.ENERGY_TOTAL)
 
 
@@ -153,6 +156,7 @@ def classify_line(obis_code: str, portal_name: str | None = None) -> LineClassif
         A :class:`LineClassification` describing quantity, direction, unit and a
         display name. Unknown codes yield ``Quantity.UNKNOWN`` with a ``None``
         unit so the sensor is still created but carries no misleading metadata.
+
     """
     parsed = parse_obis(obis_code)
 

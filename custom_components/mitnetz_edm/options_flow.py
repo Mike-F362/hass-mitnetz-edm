@@ -1,10 +1,11 @@
 """Options flow for the Mitnetz Strom EDM integration."""
+
 from __future__ import annotations
 
 from typing import Any
 
-import voluptuous as vol
 from homeassistant.config_entries import ConfigFlowResult, OptionsFlow
+import voluptuous as vol
 
 from .const import (
     CONF_RELOAD_WINDOW,
@@ -30,6 +31,7 @@ class MitnetzEdmOptionsFlow(OptionsFlow):
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
+        """Show and store the polling options."""
         if user_input is not None:
             return self.async_create_entry(title="", data=user_input)
 
@@ -56,9 +58,7 @@ class MitnetzEdmOptionsFlow(OptionsFlow):
                 ),
                 vol.Required(
                     CONF_STALE_INTERVALS,
-                    default=options.get(
-                        CONF_STALE_INTERVALS, DEFAULT_STALE_INTERVALS
-                    ),
+                    default=options.get(CONF_STALE_INTERVALS, DEFAULT_STALE_INTERVALS),
                 ): vol.All(
                     vol.Coerce(int),
                     vol.Range(min=MIN_STALE_INTERVALS, max=MAX_STALE_INTERVALS),

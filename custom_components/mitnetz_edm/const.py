@@ -1,4 +1,5 @@
 """Constants for the Mitnetz Strom EDM integration."""
+
 from __future__ import annotations
 
 from datetime import timedelta

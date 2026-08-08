@@ -4,13 +4,14 @@ These run against a real (in-memory) recorder rather than a mock, because the
 risky parts are the recorder interaction and the guard against double-counting
 energy when an overlapping window is re-imported.
 """
+
 from __future__ import annotations
 
 from datetime import datetime, timedelta
 
-import pytest
 from homeassistant.components.recorder.statistics import statistics_during_period
 from homeassistant.util import dt as dt_util
+import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 from pytest_homeassistant_custom_component.components.recorder.common import (
     async_wait_recording_done,
@@ -55,7 +56,10 @@ async def _read_stats(hass, statistic_id, start, types):
 
 async def test_power_statistics_written_to_recorder(hass):
     start = _base_time()
-    points = [(start + timedelta(minutes=15 * i), v) for i, v in enumerate([4.0, 2.0, 3.0, 1.0])]
+    points = [
+        (start + timedelta(minutes=15 * i), v)
+        for i, v in enumerate([4.0, 2.0, 3.0, 1.0])
+    ]
 
     await async_import_line_statistics(
         hass,

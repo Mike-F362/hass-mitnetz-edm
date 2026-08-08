@@ -1,0 +1,70 @@
+# Tooling configuration. Packaging metadata is deliberately absent: this is a
+# Home Assistant custom integration installed via HACS, not a distributable
+# Python package.
+
+[tool.ruff]
+target-version = "py313"   # the Python version Home Assistant requires
+line-length = 88
+src = ["custom_components", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E", "W",    # pycodestyle - PEP 8 itself
+    "F",         # pyflakes - real bugs: unused names, undefined names
+    "I",         # isort - import order
+    "N",         # pep8-naming
+    "UP",        # pyupgrade - modern syntax for the target version
+    "B",         # flake8-bugbear - likely bugs and bad practice
+    "A",         # flake8-builtins - shadowing builtins
+    "C4",        # flake8-comprehensions
+    "SIM",       # flake8-simplify
+    "RET",       # flake8-return
+    "PTH",       # flake8-use-pathlib
+    "ARG",       # flake8-unused-arguments
+    "RUF",       # ruff's own rules
+    "D",         # pydocstyle - Home Assistant requires docstrings
+]
+
+ignore = [
+    # D203/D211 and D212/D213 are mutually exclusive pairs; pick one of each.
+    "D203",  # incompatible with D211 (no blank line before class docstring)
+    "D213",  # incompatible with D212 (summary on the first line)
+    # Home Assistant's own style: __init__ is documented by its class.
+    "D107",
+    # The codebase deliberately uses descriptive rather than imperative first
+    # words in some property docstrings ("Whether the value is...").
+    "D401",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = [
+    # Test names are the documentation; a docstring is added only where the
+    # *reason* for the test is not obvious from its name.
+    "D100", "D101", "D102", "D103", "D104",
+    # pytest fixtures are requested by parameter name and often not referenced
+    # in the body - that is how fixtures work, not an unused argument.
+    "ARG001", "ARG002",
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["custom_components"]
+force-sort-within-sections = true
+
+[tool.ruff.lint.flake8-pytest-style]
+fixture-parentheses = false
+
+[tool.mypy]
+python_version = "3.13"
+follow_imports = "silent"
+ignore_missing_imports = true      # Home Assistant ships no stubs for everything
+warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+check_untyped_defs = true
+disallow_untyped_defs = false      # tests are intentionally untyped
+no_implicit_optional = true
+strict_equality = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+ignore_errors = true

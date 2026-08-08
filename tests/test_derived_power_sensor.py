@@ -4,14 +4,15 @@ The portal exposes no per-interval power line for a load-profile meter, so the
 kW figure is derived from the interval energy. These tests pin down that the
 entity exists, converts correctly, and obeys the staleness rule.
 """
+
 from __future__ import annotations
 
 from datetime import timedelta
 
-import pytest
 from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
 from homeassistant.const import STATE_UNKNOWN
 from homeassistant.util import dt as dt_util
+import pytest
 
 from custom_components.mitnetz_edm.statistics import (
     POWER_STATISTIC_SUFFIX,
@@ -31,10 +32,8 @@ def _find_power_entity(hass, friendly_name: str) -> str:
     for state in hass.states.async_all("sensor"):
         if state.attributes.get("friendly_name", "").endswith(friendly_name):
             return state.entity_id
-    raise AssertionError(
-        f"no sensor named {friendly_name!r}; "
-        f"have {[s.attributes.get('friendly_name') for s in hass.states.async_all('sensor')]}"
-    )
+    found = [s.attributes.get("friendly_name") for s in hass.states.async_all("sensor")]
+    raise AssertionError(f"no sensor named {friendly_name!r}; have {found}")
 
 
 async def test_power_sensor_created_for_interval_energy_lines(hass, init_integration):
@@ -100,7 +99,9 @@ async def test_power_sensor_goes_unknown_when_stale(
     assert hass.states.get(entity_id).state == STATE_UNKNOWN
 
 
-async def test_power_statistics_use_a_separate_id(hass, init_integration, mock_statistics):
+async def test_power_statistics_use_a_separate_id(
+    hass, init_integration, mock_statistics
+):
     """Energy and power of one line must not collide in the statistics table."""
     suffixes = {
         call.kwargs.get("suffix", "") for call in mock_statistics.await_args_list

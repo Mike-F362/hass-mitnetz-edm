@@ -282,6 +282,19 @@ aiohttp-Signaturänderung zerbrochen ist.
 | `test_config_flow.py`          | Einrichtung, Fehlerfälle, Options-Flow, Reconfigure-Flow       |
 | `test_diagnostics_services.py` | Diagnostics ohne Zugangsdaten, `import_history`                |
 
+## Entwicklung
+
+```bash
+ruff check .          # Lint
+ruff format .         # Formatierung
+pytest -m "not live"  # die Offline-Suite
+```
+
+Ruff und mypy sind in `pyproject.toml` konfiguriert. Die CI führt Ruff,
+hassfest, die HACS-Prüfung und die Tests bei jedem Push und Pull Request aus,
+zusätzlich wöchentlich — Home Assistant erscheint monatlich und die
+hassfest-Regeln ändern sich mit.
+
 ## Danksagung
 
 Entwickelt mit Unterstützung von Claude (Anthropic).

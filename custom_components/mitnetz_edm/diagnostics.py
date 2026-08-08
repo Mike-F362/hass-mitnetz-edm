@@ -1,6 +1,8 @@
 """Diagnostics support for the Mitnetz Strom EDM integration."""
+
 from __future__ import annotations
 
+from datetime import UTC
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
@@ -21,11 +23,9 @@ async def async_get_config_entry_diagnostics(
 
     session_age_seconds: float | None = None
     if api.last_login is not None:
-        from datetime import datetime, timezone
+        from datetime import datetime
 
-        session_age_seconds = (
-            datetime.now(tz=timezone.utc) - api.last_login
-        ).total_seconds()
+        session_age_seconds = (datetime.now(tz=UTC) - api.last_login).total_seconds()
 
     return {
         "options": {

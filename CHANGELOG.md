@@ -14,7 +14,19 @@ and recorded history.
 
 ### Added
 
-- Nothing yet.
+- `pyproject.toml` with ruff and mypy configuration, and a GitHub Actions
+  workflow running ruff, hassfest, HACS validation and the test suite.
+- `hacs.json` declaring the minimum Home Assistant version.
+
+### Changed
+
+- Sensor display names are English and collected as `NAME_*` constants in
+  `const.py`. Renaming leaves entity IDs and recorded history intact, since the
+  entity registry is keyed by unique ID.
+- The persistent notification raised after the login retries are exhausted is
+  English and points at the reconfigure flow.
+- `MeasurementKind`, `Quantity` and `Direction` are `StrEnum` rather than
+  `(str, Enum)`; pairwise iteration uses `itertools.pairwise`.
 
 ## [1.0.0] - 2026-08-08
 

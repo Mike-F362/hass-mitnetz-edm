@@ -1,13 +1,14 @@
 """Shared fixtures for the Mitnetz EDM test suite."""
+
 from __future__ import annotations
 
 from datetime import datetime, timedelta
 from unittest.mock import AsyncMock, patch
 from zoneinfo import ZoneInfo
 
-import pytest
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 from homeassistant.util import dt as dt_util
+import pytest
 
 from custom_components.mitnetz_edm.api import (
     MeasurementKind,

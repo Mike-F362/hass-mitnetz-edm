@@ -1,11 +1,11 @@
 """Config flow for the Mitnetz Strom EDM integration."""
+
 from __future__ import annotations
 
 import logging
 from typing import Any
 
 import aiohttp
-import voluptuous as vol
 from homeassistant.config_entries import (
     ConfigEntry,
     ConfigFlow,
@@ -14,6 +14,7 @@ from homeassistant.config_entries import (
 )
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
+import voluptuous as vol
 
 from .api import MitnetzApiError, MitnetzAuthError, MitnetzEdmApiClient
 from .const import (
@@ -45,6 +46,7 @@ class MitnetzEdmConfigFlow(ConfigFlow, domain=DOMAIN):
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
+        """Collect credentials and polling options, verifying the login."""
         errors: dict[str, str] = {}
 
         if user_input is not None:
@@ -157,6 +159,10 @@ class MitnetzEdmConfigFlow(ConfigFlow, domain=DOMAIN):
 
     @staticmethod
     def async_get_options_flow(_config_entry: ConfigEntry) -> OptionsFlow:
+        """Return the options flow handler.
+
+        Imported lazily to keep the config flow importable on its own.
+        """
         from .options_flow import MitnetzEdmOptionsFlow
 
         return MitnetzEdmOptionsFlow()

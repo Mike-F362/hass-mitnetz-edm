@@ -12,13 +12,15 @@ Implements the login flow and data endpoints exactly as observed via HAR capture
 
 No browser automation (Selenium/Playwright) is used; only aiohttp.
 """
+
 from __future__ import annotations
 
+from dataclasses import dataclass, field
+from datetime import UTC, datetime, timedelta
+from enum import StrEnum
+from itertools import pairwise
 import logging
 import re
-from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
-from enum import Enum
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -48,7 +50,7 @@ _LOCAL_TZ = ZoneInfo("Europe/Berlin")
 def _format_portal_datetime(dt: datetime) -> str:
     """Format a datetime the way the EDM portal's frontend does."""
     if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=timezone.utc)
+        dt = dt.replace(tzinfo=UTC)
     local = dt.astimezone(_LOCAL_TZ)
     offset = local.strftime("%z")  # e.g. "+0200"
     offset = f"{offset[:3]}:{offset[3:]}"
@@ -70,7 +72,7 @@ class MitnetzSessionExpiredError(MitnetzApiError):
     """Raised when the session is no longer valid and must be re-established."""
 
 
-class MeasurementKind(str, Enum):
+class MeasurementKind(StrEnum):
     """Kind of values returned by a timeseries line."""
 
     INTERVAL_ENERGY = "interval_energy"
@@ -135,7 +137,7 @@ class TimeseriesResult:
 
         gaps = sorted(
             (later.timestamp - earlier.timestamp).total_seconds()
-            for earlier, later in zip(ordered, ordered[1:], strict=False)
+            for earlier, later in pairwise(ordered)
         )
         gaps = [gap for gap in gaps if gap > 0]
         if not gaps:
@@ -178,6 +180,7 @@ class MitnetzEdmApiClient:
         Raises:
             MitnetzAuthError: on invalid credentials or missing CSRF token.
             MitnetzApiError: on unexpected transport/HTTP errors.
+
         """
         _LOGGER.debug("Starting login flow against %s", LOGIN_PAGE_URL)
         self._logged_in = False
@@ -228,7 +231,7 @@ class MitnetzEdmApiClient:
             )
 
         self._logged_in = True
-        self.last_login = datetime.now(tz=timezone.utc)
+        self.last_login = datetime.now(tz=UTC)
         _LOGGER.debug("Login successful, session established")
 
     @staticmethod
@@ -344,7 +347,9 @@ class MitnetzEdmApiClient:
             ends = data["timestamps"]
             use_starts = isinstance(starts, list) and len(starts) == len(ends)
 
-            for ts, value in zip(starts if use_starts else ends, data["values"], strict=False):
+            for ts, value in zip(
+                starts if use_starts else ends, data["values"], strict=False
+            ):
                 parsed = MitnetzEdmApiClient._parse_point(ts, value)
                 if parsed is not None:
                     points.append(parsed)
@@ -354,7 +359,9 @@ class MitnetzEdmApiClient:
                 # are still interval ends, so shift them back by the interval
                 # length, which can only be measured once all points are parsed.
                 points = MitnetzEdmApiClient._shift_ends_to_starts(points)
-        elif isinstance(data, dict) and "data" in data and isinstance(data["data"], list):
+        elif (
+            isinstance(data, dict) and "data" in data and isinstance(data["data"], list)
+        ):
             for row in data["data"]:
                 ts = row.get("timestamp") or row.get("x") or row.get("t")
                 value = row.get("value") or row.get("y") or row.get("v")
@@ -396,7 +403,7 @@ class MitnetzEdmApiClient:
         ordered = sorted(points, key=lambda p: p.timestamp)
         gaps = sorted(
             (later.timestamp - earlier.timestamp).total_seconds()
-            for earlier, later in zip(ordered, ordered[1:], strict=False)
+            for earlier, later in pairwise(ordered)
         )
         gaps = [gap for gap in gaps if gap > 0]
         if not gaps:
@@ -416,7 +423,7 @@ class MitnetzEdmApiClient:
             if isinstance(ts, (int, float)):
                 # Assume epoch seconds or milliseconds.
                 epoch = float(ts) / 1000.0 if ts > 10_000_000_000 else float(ts)
-                timestamp = datetime.fromtimestamp(epoch, tz=timezone.utc)
+                timestamp = datetime.fromtimestamp(epoch, tz=UTC)
             else:
                 timestamp = datetime.fromisoformat(str(ts).replace("Z", "+00:00"))
 
@@ -445,7 +452,7 @@ class MitnetzEdmApiClient:
         ordered = sorted(points, key=lambda p: p.timestamp)
         increases = 0
         decreases = 0
-        for prev, cur in zip(ordered, ordered[1:], strict=False):
+        for prev, cur in pairwise(ordered):
             if cur.value > prev.value:
                 increases += 1
             elif cur.value < prev.value:

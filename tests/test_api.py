@@ -14,9 +14,10 @@ and broke outright when aiohttp made ``stream_writer`` a required argument;
 ``aioclient_mock`` ships with pytest-homeassistant-custom-component and is
 updated in lockstep with the aiohttp version Home Assistant pins.
 """
+
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from zoneinfo import ZoneInfo
 
 import pytest
@@ -111,10 +112,13 @@ def client(session):
         # Winter time -> +01:00.
         (datetime(2026, 1, 6, 0, 0, tzinfo=BERLIN), "2026-1-6T00:00:00+01:00"),
         # Double digit month/day stay as-is.
-        (datetime(2026, 12, 24, 18, 30, 15, tzinfo=BERLIN), "2026-12-24T18:30:15+01:00"),
+        (
+            datetime(2026, 12, 24, 18, 30, 15, tzinfo=BERLIN),
+            "2026-12-24T18:30:15+01:00",
+        ),
         # UTC input is converted to portal local time.
         (
-            datetime(2026, 7, 5, 22, 0, tzinfo=timezone.utc),
+            datetime(2026, 7, 5, 22, 0, tzinfo=UTC),
             "2026-7-6T00:00:00+02:00",
         ),
     ],
@@ -217,9 +221,7 @@ async def test_get_measurement_points_parses_tree(client, aioclient_mock):
     assert [line.name for line in points[0].lines] == ["1-1:1.29.0", "1-1:2.29.0"]
 
 
-async def test_get_measurement_points_ignores_non_line_children(
-    client, aioclient_mock
-):
+async def test_get_measurement_points_ignores_non_line_children(client, aioclient_mock):
     aioclient_mock.get(
         MEASUREMENT_POINTS_URL,
         json=[
@@ -306,7 +308,9 @@ async def test_get_timeseries_builds_portal_url(client, aioclient_mock):
 
     aioclient_mock.get(expected_url, json={"timestamps": [], "values": []})
 
-    await client.get_timeseries("NMP_TEST_MP_0000001", "NMP_TEST_LN_0000002", start, end)
+    await client.get_timeseries(
+        "NMP_TEST_MP_0000001", "NMP_TEST_LN_0000002", start, end
+    )
 
     assert str(aioclient_mock.mock_calls[-1][1]) == expected_url
 
@@ -422,7 +426,7 @@ async def test_timeseries_uses_the_interval_start_edge(client, aioclient_mock):
     result = await client.get_timeseries("MP", "L", DAY_START, DAY_END)
 
     peak = max(result.points, key=lambda p: p.value)
-    assert peak.timestamp == datetime(2026, 8, 6, 12, 0, tzinfo=timezone.utc)
+    assert peak.timestamp == datetime(2026, 8, 6, 12, 0, tzinfo=UTC)
 
 
 # ------------------------------------------- measurement point tree variants ---

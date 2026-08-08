@@ -1,12 +1,13 @@
 """The Mitnetz Strom EDM integration."""
+
 from __future__ import annotations
 
-import logging
 from dataclasses import dataclass
 from datetime import timedelta
+import logging
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_PASSWORD, CONF_USERNAME, Platform
+from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
 
@@ -59,9 +60,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: MitnetzEdmConfigEntry) -
         minutes=entry.options.get(CONF_UPDATE_INTERVAL, DEFAULT_UPDATE_INTERVAL_MIN)
     )
     reload_window = timedelta(
-        minutes=entry.options.get(
-            CONF_RELOAD_WINDOW, DEFAULT_RELOAD_WINDOW_HOURS * 60
-        )
+        minutes=entry.options.get(CONF_RELOAD_WINDOW, DEFAULT_RELOAD_WINDOW_HOURS * 60)
     )
 
     edm_coordinator = MitnetzEdmCoordinator(
@@ -77,7 +76,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: MitnetzEdmConfigEntry) -
 
     await edm_coordinator.async_config_entry_first_refresh()
 
-    entry.runtime_data = MitnetzEdmRuntimeData(api=api_client, coordinator=edm_coordinator)
+    entry.runtime_data = MitnetzEdmRuntimeData(
+        api=api_client, coordinator=edm_coordinator
+    )
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.async_on_unload(entry.add_update_listener(async_update_listener))
@@ -87,7 +88,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: MitnetzEdmConfigEntry) -
     return True
 
 
-async def async_update_listener(hass: HomeAssistant, entry: MitnetzEdmConfigEntry) -> None:
+async def async_update_listener(
+    hass: HomeAssistant, entry: MitnetzEdmConfigEntry
+) -> None:
     """Reload the entry when options change (interval/reload window/timeout)."""
     await hass.config_entries.async_reload(entry.entry_id)
 

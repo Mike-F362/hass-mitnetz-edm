@@ -17,11 +17,12 @@ aggregated per hour:
 * energy lines  -> ``sum`` (and a running cumulative total for the Energy Dashboard)
 * power  lines  -> ``mean`` / ``min`` / ``max`` over the intervals in that hour
 """
+
 from __future__ import annotations
 
-import logging
 from collections import defaultdict
 from datetime import datetime, timedelta
+import logging
 
 from homeassistant.components.recorder.models import (
     StatisticData,
@@ -48,6 +49,7 @@ def statistic_id_for(line_id: str, suffix: str = "") -> str:
         line_id: The portal's line id.
         suffix: Distinguishes additional series derived from the same line,
             e.g. :data:`POWER_STATISTIC_SUFFIX`.
+
     """
     return f"{DOMAIN}:{line_id.lower()}{suffix}"
 
@@ -89,6 +91,7 @@ def build_statistics(
 
     Returns:
         Hourly statistics rows sorted ascending by ``start``.
+
     """
     buckets = bucket_by_hour(points)
     running_sum = initial_sum
@@ -102,9 +105,7 @@ def build_statistics(
         if quantity is Quantity.ENERGY_INTERVAL:
             hourly_total = sum(values)
             running_sum += hourly_total
-            rows.append(
-                StatisticData(start=hour, state=hourly_total, sum=running_sum)
-            )
+            rows.append(StatisticData(start=hour, state=hourly_total, sum=running_sum))
         elif quantity is Quantity.ENERGY_TOTAL:
             # Already cumulative: the register reading at the end of the hour.
             latest = values[-1]
@@ -133,8 +134,14 @@ async def async_import_line_statistics(
     """Write one line's interval data into long-term statistics.
 
     Args:
+        hass: The Home Assistant instance.
+        line_id: The portal's line id, used to build the statistic id.
+        display_name: Human-readable name shown in the statistics UI.
+        quantity: Decides whether the series is summed or averaged.
+        points: ``(timestamp, value)`` pairs to import.
         suffix: Appended to the statistic id, so a line can contribute more than
             one series (its energy plus the power derived from it).
+
     """
     if not points:
         return

@@ -1,10 +1,11 @@
 """DataUpdateCoordinator for the Mitnetz Strom EDM integration."""
+
 from __future__ import annotations
 
 import asyncio
-import logging
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
+import logging
 
 from homeassistant.components.persistent_notification import (
     async_create as pn_create,
@@ -76,9 +77,7 @@ class LineData:
         age = self.age(now)
         if age is None:
             return True
-        interval = self.interval or timedelta(
-            minutes=FALLBACK_MEASUREMENT_INTERVAL_MIN
-        )
+        interval = self.interval or timedelta(minutes=FALLBACK_MEASUREMENT_INTERVAL_MIN)
         return age > interval * max_intervals
 
     @property
@@ -178,14 +177,16 @@ class MitnetzEdmCoordinator(DataUpdateCoordinator[MitnetzEdmData]):
                 _LOGGER.error(
                     "Login attempt %d/%d failed: %s", attempt, MAX_LOGIN_ATTEMPTS, err
                 )
-            except Exception as err:  # noqa: BLE001 - broaden to network errors too
+            except Exception as err:
                 last_error = err
                 _LOGGER.error(
                     "Login attempt %d/%d errored: %s", attempt, MAX_LOGIN_ATTEMPTS, err
                 )
 
             if attempt < MAX_LOGIN_ATTEMPTS:
-                delay = LOGIN_RETRY_DELAYS[min(attempt - 1, len(LOGIN_RETRY_DELAYS) - 1)]
+                delay = LOGIN_RETRY_DELAYS[
+                    min(attempt - 1, len(LOGIN_RETRY_DELAYS) - 1)
+                ]
                 _LOGGER.debug("Waiting %ds before next login attempt", delay)
                 await asyncio.sleep(delay)
 
@@ -234,9 +235,7 @@ class MitnetzEdmCoordinator(DataUpdateCoordinator[MitnetzEdmData]):
 
                 self._warn_on_interval_mismatch(line.id, interval)
 
-                await self._async_import_statistics(
-                    line.id, line.name, lines[line.id]
-                )
+                await self._async_import_statistics(line.id, line.name, lines[line.id])
 
         # One sensor per line, plus a derived power sensor for each
         # interval-energy line (see sensor.MitnetzEdmDerivedPowerSensor).
@@ -316,7 +315,7 @@ class MitnetzEdmCoordinator(DataUpdateCoordinator[MitnetzEdmData]):
                 quantity=classification.quantity,
                 points=pairs,
             )
-        except Exception:  # noqa: BLE001 - statistics are best-effort
+        except Exception:
             _LOGGER.exception("Failed to import statistics for line %s", line_id)
 
         if classification.quantity is not Quantity.ENERGY_INTERVAL:
@@ -331,14 +330,15 @@ class MitnetzEdmCoordinator(DataUpdateCoordinator[MitnetzEdmData]):
                 points=line_data.power_points,
                 suffix=POWER_STATISTIC_SUFFIX,
             )
-        except Exception:  # noqa: BLE001 - statistics are best-effort
-            _LOGGER.exception(
-                "Failed to import power statistics for line %s", line_id
-            )
+        except Exception:
+            _LOGGER.exception("Failed to import power statistics for line %s", line_id)
 
     def _compute_start(self, line_id: str, now: datetime) -> datetime:
-        """Compute the fetch start = last known timestamp - overlap, or the
-        configured reload window if no prior data exists."""
+        """Compute where to start fetching for a line.
+
+        The last known timestamp minus the overlap window, or the configured
+        reload window when nothing has been fetched yet.
+        """
         existing = self._data.lines.get(line_id)
         if existing and existing.last_timestamp is not None:
             return existing.last_timestamp - self.reload_window
@@ -349,7 +349,9 @@ class MitnetzEdmCoordinator(DataUpdateCoordinator[MitnetzEdmData]):
         if not self.api.is_logged_in:
             await self._ensure_logged_in()
 
-        points = self.data.points if self.data else await self.api.get_measurement_points()
+        points = (
+            self.data.points if self.data else await self.api.get_measurement_points()
+        )
         for point in points:
             for line in point.lines:
                 await self.api.get_timeseries(

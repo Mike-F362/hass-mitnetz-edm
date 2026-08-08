@@ -1,0 +1,79 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  # Home Assistant releases monthly and hassfest rules change with it; a weekly
+  # run surfaces breakage before a user does.
+  schedule:
+    - cron: "0 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Home Assistant 2026.7 runs on 3.13; the code uses StrEnum and datetime.UTC,
+  # which need 3.11+ anyway.
+  PYTHON_VERSION: "3.13"
+
+jobs:
+  lint:
+    name: Ruff
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - run: pip install ruff
+      - name: Lint
+        run: ruff check --output-format=github .
+      - name: Formatting
+        run: ruff format --check --diff .
+
+  hassfest:
+    name: Hassfest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Home Assistant's own manifest/strings validator. Catches a malformed
+      # manifest.json, missing translation keys and unknown iot_class values.
+      - uses: home-assistant/actions/hassfest@master
+
+  hacs:
+    name: HACS
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hacs/action@main
+        with:
+          category: integration
+          # The brands check wants the icon to exist in home-assistant/brands.
+          # Drop this ignore once that pull request is merged.
+          ignore: brands
+
+  test:
+    name: Pytest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - name: Install test dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements-test.txt
+      - name: Report the Home Assistant version under test
+        run: python -c "from homeassistant.const import __version__; print(__version__)"
+      - name: Run tests
+        # The live suite talks to the real portal and needs credentials, so it
+        # is excluded here and stays a local, opt-in tool.
+        run: pytest -m "not live" --cov=custom_components.mitnetz_edm --cov-report=term-missing

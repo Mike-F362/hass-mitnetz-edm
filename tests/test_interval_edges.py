@@ -10,15 +10,16 @@ for every single point. Reading ``timestamps`` and treating it as the start
 shifts every value one interval into the future, which is what made the Home
 Assistant curve trail the portal's chart.
 """
+
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
 from custom_components.mitnetz_edm.api import MitnetzEdmApiClient
 
-UTC = timezone.utc
+UTC = UTC
 QUARTER = timedelta(minutes=15)
 
 
