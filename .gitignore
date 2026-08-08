@@ -36,3 +36,7 @@ tests/live_config.json
 json/
 reports/
 *.har
+
+# Vendor logo, kept locally for the home-assistant/brands submission only.
+# A trademarked graphic cannot be relicensed under this repository's MIT licence.
+logo.mitnetz.svg

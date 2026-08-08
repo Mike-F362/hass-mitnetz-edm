@@ -1,13 +1,17 @@
 {
   "domain": "mitnetz_edm",
   "name": "Mitnetz Strom EDM",
-  "codeowners": ["@mitnetz_edm"],
+  "codeowners": [
+    "@GITHUB_HANDLE"
+  ],
   "config_flow": true,
-  "dependencies": ["recorder"],
-  "documentation": "https://github.com/mitnetz_edm/mitnetz_edm",
+  "dependencies": [
+    "recorder"
+  ],
+  "documentation": "https://github.com/GITHUB_HANDLE/mitnetz_edm",
   "integration_type": "hub",
   "iot_class": "cloud_polling",
-  "issue_tracker": "https://github.com/mitnetz_edm/mitnetz_edm/issues",
+  "issue_tracker": "https://github.com/GITHUB_HANDLE/mitnetz_edm/issues",
   "requirements": [],
   "version": "1.0.0"
 }
