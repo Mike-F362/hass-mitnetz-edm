@@ -36,8 +36,8 @@ def async_setup_services(hass: HomeAssistant) -> None:
             return
 
         for entry in entries:
-            runtime_data = getattr(entry, "runtime_data", None)
-            if runtime_data is None:
+            runtime_data = getattr(entry, "runtime_data")
+            if not runtime_data:
                 continue
             _LOGGER.debug(
                 "Importing history for entry %s from %s to %s",

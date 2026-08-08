@@ -26,3 +26,13 @@ Thumbs.db
 
 # Local agent settings
 .claude/settings.local.json
+
+# Local test credentials and real meter identifiers. The meter point
+# designation together with a load profile is personal data - never commit it.
+tests/live_config.json
+
+# Captured portal responses and exported reports, kept locally for debugging.
+# Same reason: they carry the real meter point and its load profile.
+json/
+reports/
+*.har

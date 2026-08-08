@@ -1,0 +1,16 @@
+{
+  "_comment": [
+    "Copy to live_config.json and fill in to run the tests marked 'live'.",
+    "live_config.json is git-ignored and must never be committed: the meter",
+    "point designation together with a load profile is personal data.",
+    "",
+    "Run with:  pytest -m live",
+    "Without this file the live tests are skipped, so the normal suite stays",
+    "offline, fast and reproducible."
+  ],
+  "username": "your-edm-portal-login",
+  "password": "your-edm-portal-password",
+  "meterpoint_id": "NMP_SLP_S_0000000",
+  "line_id": "NMP_SLP_S_0000000",
+  "expected_obis": "1-1:1.29.0"
+}

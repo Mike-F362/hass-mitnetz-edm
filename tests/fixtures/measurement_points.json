@@ -1,0 +1,43 @@
+[
+  {
+    "name": "my metering points",
+    "type": "root",
+    "childs": [
+      {
+        "type": "mp",
+        "id": "NMP_TEST_MP_0000001",
+        "name": "DE0001234567890123456789012345678",
+        "description": null,
+        "commodity": "S",
+        "childs": [
+          {
+            "type": "line",
+            "id": "NMP_TEST_LN_0000002",
+            "name": "1-1:1.29.0, DE0001234567890123456789012345678",
+            "description": null,
+            "details": {
+              "unit": "kWh",
+              "measured quantity": "OBIS 1-1:1.29.0 (kWh)",
+              "commodity": "S",
+              "category": "B",
+              "metPointId": "NMP_TEST_MP_0000001"
+            }
+          },
+          {
+            "type": "line",
+            "id": "NMP_TEST_LN_0000003",
+            "name": "1-1:2.29.0, DE0001234567890123456789012345678",
+            "description": null,
+            "details": {
+              "unit": "kWh",
+              "measured quantity": "OBIS 1-1:2.29.0 (kWh)",
+              "commodity": "S",
+              "category": "L",
+              "metPointId": "NMP_TEST_MP_0000001"
+            }
+          }
+        ]
+      }
+    ]
+  }
+]

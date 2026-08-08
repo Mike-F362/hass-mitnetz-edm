@@ -1,11 +1,11 @@
 # Mitnetz Strom EDM – Home Assistant Integration
 
-<img src="logo.mitnetz.svg" alt="Mitnetz Strom logo" width="200">
-
-> The Mitnetz Strom logo is a trademark of MITNETZ STROM GmbH and is used here
-> solely to identify the portal this integration talks to. This project is
-> unofficial, is not affiliated with MITNETZ STROM GmbH, and is neither
-> endorsed nor authorised by them.
+> MITNETZ STROM and its logo are trademarks of MITNETZ STROM GmbH. The name is
+> used here solely to identify the portal this integration talks to. This
+> project is unofficial, is not affiliated with MITNETZ STROM GmbH, and is
+> neither endorsed nor authorised by them. No logo is bundled in this
+> repository; the integration icon is submitted separately to the
+> [home-assistant/brands](https://github.com/home-assistant/brands) repository.
 
 *Deutsche Fassung: [README_de.md](README_de.md)*
 
