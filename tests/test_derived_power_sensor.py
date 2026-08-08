@@ -39,7 +39,7 @@ def _find_power_entity(hass, friendly_name: str) -> str:
 
 async def test_power_sensor_created_for_interval_energy_lines(hass, init_integration):
     """Each kWh interval line gets a companion kW sensor."""
-    for name in ("Bezug Leistung", "Einspeisung Leistung"):
+    for name in ("Import Power", "Export Power"):
         entity_id = _find_power_entity(hass, name)
         state = hass.states.get(entity_id)
         assert state.attributes["device_class"] == SensorDeviceClass.POWER
@@ -52,17 +52,17 @@ async def test_no_power_sensor_for_native_power_line(hass, init_integration):
     names = [
         s.attributes.get("friendly_name", "") for s in hass.states.async_all("sensor")
     ]
-    assert not any(name.endswith("Maximum Leistung") for name in names)
+    assert not any(name.endswith("Maximum Power") for name in names)
 
 
 async def test_power_value_is_energy_over_interval(hass, init_integration):
     """0.42 kWh in 15 minutes is 1.68 kW."""
-    entity_id = _find_power_entity(hass, "Bezug Leistung")
+    entity_id = _find_power_entity(hass, "Import Power")
     assert float(hass.states.get(entity_id).state) == pytest.approx(1.68)
 
 
 async def test_power_sensor_exposes_source_energy(hass, init_integration):
-    entity_id = _find_power_entity(hass, "Einspeisung Leistung")
+    entity_id = _find_power_entity(hass, "Export Power")
     attrs = hass.states.get(entity_id).attributes
 
     assert attrs["derived_from"] == "interval_energy"
@@ -96,7 +96,7 @@ async def test_power_sensor_goes_unknown_when_stale(
     await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
 
-    entity_id = _find_power_entity(hass, "Bezug Leistung")
+    entity_id = _find_power_entity(hass, "Import Power")
     assert hass.states.get(entity_id).state == STATE_UNKNOWN
 
 

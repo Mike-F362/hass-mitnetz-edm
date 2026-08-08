@@ -33,6 +33,16 @@ import re
 from dataclasses import dataclass
 from enum import Enum
 
+from .const import (
+    NAME_AVERAGE,
+    NAME_DIRECTION_EXPORT,
+    NAME_DIRECTION_IMPORT,
+    NAME_INSTANTANEOUS,
+    NAME_LAST_AVERAGE,
+    NAME_MAXIMUM,
+    NAME_METER_READING,
+)
+
 # ``1-1:1.29.0`` -> groups: a=1, b=1, c=1, d=29, e=0
 _OBIS_RE = re.compile(
     r"^(?P<a>\d+)-(?P<b>\d+):(?P<c>\d+)\.(?P<d>\d+)(?:\.(?P<e>\d+))?$"
@@ -74,13 +84,14 @@ _D_FIELD_QUANTITY: dict[int, Quantity] = {
     29: Quantity.ENERGY_INTERVAL,  # load profile interval energy
 }
 
-#: ``D`` field -> German descriptor appended to the direction name.
+#: ``D`` field -> qualifier appended to the direction name. Defined in const.py
+#: so every user-facing string lives in one place.
 _D_FIELD_LABEL: dict[int, str] = {
-    4: "Mittelwert",
-    5: "Letzter Mittelwert",
-    6: "Maximum",
-    7: "Momentanwert",
-    8: "Zählerstand",
+    4: NAME_AVERAGE,
+    5: NAME_LAST_AVERAGE,
+    6: NAME_MAXIMUM,
+    7: NAME_INSTANTANEOUS,
+    8: NAME_METER_READING,
     29: "",  # plain interval energy needs no suffix
 }
 
@@ -91,13 +102,17 @@ _C_FIELD_DIRECTION: dict[int, Direction] = {
 }
 
 _DIRECTION_LABEL: dict[Direction, str] = {
-    Direction.IMPORT: "Bezug",
-    Direction.EXPORT: "Einspeisung",
+    Direction.IMPORT: NAME_DIRECTION_IMPORT,
+    Direction.EXPORT: NAME_DIRECTION_EXPORT,
 }
 
-#: Name fragments used as a fallback when the OBIS code is unparseable.
-_POWER_HINTS = ("maximum", "minimum", "max.", "min.", "leistung", "demand", "kw")
-_ENERGY_HINTS = ("arbeit", "energie", "zählerstand", "zaehlerstand", "kwh")
+# Fragments matched against the portal's free-text line name when the OBIS code
+# cannot be parsed. These are deliberately German and lower-cased: they are
+# *search patterns* for the portal's own wording, not text shown to the user.
+# Translating them would break the fallback. English terms are included because
+# the portal mixes them in ("demand", "kW").
+NAME_HINTS_POWER = ("maximum", "minimum", "max.", "min.", "leistung", "demand", "kw")
+NAME_HINTS_ENERGY = ("arbeit", "energie", "zählerstand", "zaehlerstand", "kwh")
 
 
 @dataclass(frozen=True, slots=True)
@@ -166,9 +181,9 @@ def _classify_by_name(portal_name: str | None) -> Quantity:
     if not portal_name:
         return Quantity.UNKNOWN
     lowered = portal_name.casefold()
-    if any(hint in lowered for hint in _POWER_HINTS):
+    if any(hint in lowered for hint in NAME_HINTS_POWER):
         return Quantity.POWER
-    if any(hint in lowered for hint in _ENERGY_HINTS):
+    if any(hint in lowered for hint in NAME_HINTS_ENERGY):
         return Quantity.ENERGY_INTERVAL
     return Quantity.UNKNOWN
 
@@ -187,7 +202,7 @@ def _display_name(
     direction: Direction,
     d_field: int | None,
 ) -> str:
-    """Build a human-readable name, e.g. "Einspeisung Maximum"."""
+    """Build a human-readable name, e.g. "Export Maximum"."""
     if direction is Direction.UNKNOWN or d_field is None:
         return portal_name or obis_code
 

@@ -34,8 +34,8 @@ using `aiohttp` — no Selenium, no Playwright, no browser.
 
 ## Installation (HACS)
 
-1. Add this repository as a "Custom repository" (category: Integration) in
-   HACS.
+1. Add `https://github.com/Mike-F362/hass-mitnetz-edm` as a "Custom repository"
+   (category: Integration) in HACS.
 2. Install "Mitnetz Strom EDM".
 3. Restart Home Assistant.
 4. Settings → Devices & Services → Add Integration → "Mitnetz Strom EDM".
@@ -79,7 +79,7 @@ Per-sensor attributes: `obis_code`, `measurement_point`, `quantity`,
 ### Derived power sensors
 
 Every interval-energy line (OBIS `D` = 29) additionally gets a **kW sensor**,
-e.g. "Bezug Leistung" and "Einspeisung Leistung". It carries the average power
+e.g. "Import Power" and "Export Power". It carries the average power
 of the most recent measurement interval:
 
     P[kW] = E[kWh] / t[h]
@@ -133,9 +133,13 @@ The integration derives the physical meaning of each line from its OBIS code
 | 8         | Meter reading          | kWh  | `total_increasing` |
 | 29        | Interval energy        | kWh  | `measurement`      |
 
-The `C` field gives the direction (`1` = import/"Bezug", `2` =
-export/"Einspeisung"), which is combined into the display name, e.g.
-`1-1:2.6.0` → "Einspeisung Maximum".
+The `C` field gives the direction (`1` = import, the portal's "Bezug"; `2` =
+export, "Einspeisung"), which is combined into the display name, e.g.
+`1-1:2.6.0` → "Export Maximum".
+
+All display names are English and collected in `const.py` (`NAME_*`), so they
+can be reviewed and changed in one place. Renaming them leaves entity IDs and
+recorded history intact, because the entity registry is keyed by unique ID.
 
 This matters: maximum and average lines are **power figures in kW** that rise
 *and fall* every measurement interval. Publishing them as `total_increasing`

@@ -27,6 +27,7 @@ from .const import (
     FALLBACK_MEASUREMENT_INTERVAL_MIN,
     LOGIN_RETRY_DELAYS,
     MAX_LOGIN_ATTEMPTS,
+    NAME_POWER_SUFFIX,
 )
 from .obis import Quantity, classify_line
 from .power import derive_power_points, energy_to_power
@@ -325,7 +326,7 @@ class MitnetzEdmCoordinator(DataUpdateCoordinator[MitnetzEdmData]):
             await async_import_line_statistics(
                 self.hass,
                 line_id=line_id,
-                display_name=f"{classification.display_name} Leistung",
+                display_name=f"{classification.display_name} {NAME_POWER_SUFFIX}",
                 quantity=Quantity.POWER,
                 points=line_data.power_points,
                 suffix=POWER_STATISTIC_SUFFIX,

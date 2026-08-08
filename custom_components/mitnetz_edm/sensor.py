@@ -15,7 +15,13 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import dt as dt_util
 
-from .const import DOMAIN
+from .const import (
+    DEVICE_MANUFACTURER,
+    DEVICE_MODEL,
+    DEVICE_NAME,
+    DOMAIN,
+    NAME_POWER_SUFFIX,
+)
 from .coordinator import LineData, MitnetzEdmCoordinator
 from .obis import UNIT_KW, LineClassification, Quantity, classify_line
 
@@ -108,9 +114,9 @@ class MitnetzEdmLineSensor(CoordinatorEntity[MitnetzEdmCoordinator], SensorEntit
 
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry.entry_id)},
-            name="Mitnetz Strom EDM",
-            manufacturer="Mitnetz Strom",
-            model="EDM Smartmeter-Portal",
+            name=DEVICE_NAME,
+            manufacturer=DEVICE_MANUFACTURER,
+            model=DEVICE_MODEL,
             entry_type="service",
         )
 
@@ -228,13 +234,13 @@ class MitnetzEdmDerivedPowerSensor(
         self._classification = classification
 
         self._attr_unique_id = f"{entry.entry_id}_{line_id}_power"
-        self._attr_name = f"{classification.display_name} Leistung"
+        self._attr_name = f"{classification.display_name} {NAME_POWER_SUFFIX}"
 
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry.entry_id)},
-            name="Mitnetz Strom EDM",
-            manufacturer="Mitnetz Strom",
-            model="EDM Smartmeter-Portal",
+            name=DEVICE_NAME,
+            manufacturer=DEVICE_MANUFACTURER,
+            model=DEVICE_MODEL,
             entry_type="service",
         )
 

@@ -34,7 +34,7 @@ def test_parse_obis_valid(code, expected):
 
 
 @pytest.mark.parametrize(
-    "code", ["", "not-an-obis-code", "1-1:x.29.0", "Einspeisung Maximum", "1:1.29.0"]
+    "code", ["", "not-an-obis-code", "1-1:x.29.0", "Export Maximum", "1:1.29.0"]
 )
 def test_parse_obis_invalid(code):
     assert parse_obis(code) is None
@@ -44,13 +44,13 @@ def test_parse_obis_invalid(code):
     ("code", "quantity", "unit", "direction", "name"),
     [
         # Interval energy (load profile) - the two lines the portal reported.
-        ("1-1:1.29.0", Quantity.ENERGY_INTERVAL, UNIT_KWH, Direction.IMPORT, "Bezug"),
+        ("1-1:1.29.0", Quantity.ENERGY_INTERVAL, UNIT_KWH, Direction.IMPORT, "Import"),
         (
             "1-1:2.29.0",
             Quantity.ENERGY_INTERVAL,
             UNIT_KWH,
             Direction.EXPORT,
-            "Einspeisung",
+            "Export",
         ),
         # Maximum demand -> kW, NOT kWh.
         (
@@ -58,19 +58,19 @@ def test_parse_obis_invalid(code):
             Quantity.POWER,
             UNIT_KW,
             Direction.EXPORT,
-            "Einspeisung Maximum",
+            "Export Maximum",
         ),
-        ("1-1:1.6.0", Quantity.POWER, UNIT_KW, Direction.IMPORT, "Bezug Maximum"),
+        ("1-1:1.6.0", Quantity.POWER, UNIT_KW, Direction.IMPORT, "Import Maximum"),
         # Average demand is also a power figure.
-        ("1-1:1.5.0", Quantity.POWER, UNIT_KW, Direction.IMPORT, "Bezug Letzter Mittelwert"),
-        ("1-1:2.4.0", Quantity.POWER, UNIT_KW, Direction.EXPORT, "Einspeisung Mittelwert"),
+        ("1-1:1.5.0", Quantity.POWER, UNIT_KW, Direction.IMPORT, "Import Last Average"),
+        ("1-1:2.4.0", Quantity.POWER, UNIT_KW, Direction.EXPORT, "Export Average"),
         # Cumulative register.
         (
             "1-0:1.8.0",
             Quantity.ENERGY_TOTAL,
             UNIT_KWH,
             Direction.IMPORT,
-            "Bezug Zählerstand",
+            "Import Meter Reading",
         ),
     ],
 )
@@ -107,7 +107,7 @@ def test_unknown_code_yields_no_unit():
 @pytest.mark.parametrize(
     ("portal_name", "expected"),
     [
-        ("Einspeisung Maximum", Quantity.POWER),
+        ("Export Maximum", Quantity.POWER),
         ("Maximale Leistung", Quantity.POWER),
         ("Bezug Arbeit", Quantity.ENERGY_INTERVAL),
         ("Zählerstand", Quantity.ENERGY_INTERVAL),
@@ -121,5 +121,5 @@ def test_name_fallback_for_unparseable_codes(portal_name, expected):
 
 
 def test_name_fallback_keeps_portal_name_as_display_name():
-    result = classify_line("kein-obis-code", portal_name="Einspeisung Maximum")
-    assert result.display_name == "Einspeisung Maximum"
+    result = classify_line("kein-obis-code", portal_name="Export Maximum")
+    assert result.display_name == "Export Maximum"

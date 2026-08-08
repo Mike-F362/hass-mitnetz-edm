@@ -76,5 +76,5 @@ entries below describe the resulting integration rather than that history.
   well known to be re-identifiable. Test fixtures are pseudonymised, and
   credentials for the live tests are read from a git-ignored config file.
 
-[Unreleased]: https://github.com/OWNER/mitnetz_edm/compare/v1.0.0...HEAD
-[1.0.0]: https://github.com/OWNER/mitnetz_edm/releases/tag/v1.0.0
+[Unreleased]: https://github.com/Mike-F362/hass-mitnetz-edm/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/Mike-F362/hass-mitnetz-edm/releases/tag/v1.0.0

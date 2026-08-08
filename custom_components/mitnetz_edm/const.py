@@ -6,6 +6,35 @@ from typing import Final
 
 DOMAIN: Final = "mitnetz_edm"
 
+#: Shown as the device name and prefixed to every statistic.
+DEVICE_NAME: Final = "Mitnetz Strom EDM"
+DEVICE_MANUFACTURER: Final = "Mitnetz Strom"
+DEVICE_MODEL: Final = "EDM smart meter portal"
+
+# --- Sensor display names ----------------------------------------------------
+# All user-facing sensor names are collected here so they can be reviewed and
+# changed in one place. English throughout, even though the portal itself is
+# German - see NAME_HINTS_* in obis.py for the German strings that are matched
+# against portal text rather than displayed.
+#
+# A name is assembled as "<direction> <qualifier>", e.g. "Export Maximum".
+# Changing these renames existing entities but leaves their entity_id and
+# recorded history intact, because the entity registry is keyed by unique_id.
+
+#: ``C`` field of the OBIS code -> direction shown to the user.
+NAME_DIRECTION_IMPORT: Final = "Import"
+NAME_DIRECTION_EXPORT: Final = "Export"
+
+#: ``D`` field of the OBIS code -> qualifier appended to the direction.
+NAME_AVERAGE: Final = "Average"
+NAME_LAST_AVERAGE: Final = "Last Average"
+NAME_MAXIMUM: Final = "Maximum"
+NAME_INSTANTANEOUS: Final = "Instantaneous"
+NAME_METER_READING: Final = "Meter Reading"
+
+#: Appended to an interval-energy line's name for its derived kW sensor.
+NAME_POWER_SUFFIX: Final = "Power"
+
 # --- Config entry keys -----------------------------------------------------
 CONF_UPDATE_INTERVAL: Final = "update_interval"
 CONF_RELOAD_WINDOW: Final = "reload_window"
@@ -46,15 +75,6 @@ TIMESERIES_URL_TEMPLATE: Final = (
 # --- Login re-try backoff (seconds) -----------------------------------------
 LOGIN_RETRY_DELAYS: Final = (5, 15, 30)
 MAX_LOGIN_ATTEMPTS: Final = 3
-
-# --- OBIS code mapping -------------------------------------------------------
-OBIS_BEZUG: Final = "1-1:1.29.0"
-OBIS_EINSPEISUNG: Final = "1-1:2.29.0"
-
-OBIS_FRIENDLY_NAMES: Final = {
-    OBIS_BEZUG: "Bezug",
-    OBIS_EINSPEISUNG: "Einspeisung",
-}
 
 # --- Misc ---------------------------------------------------------------
 PLATFORMS: Final = ["sensor"]

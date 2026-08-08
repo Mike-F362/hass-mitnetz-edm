@@ -60,7 +60,7 @@ async def test_power_statistics_written_to_recorder(hass):
     await async_import_line_statistics(
         hass,
         line_id=LINE_MAX_EINSPEISUNG,
-        display_name="Einspeisung Maximum",
+        display_name="Export Maximum",
         quantity=Quantity.POWER,
         points=points,
     )
@@ -86,7 +86,7 @@ async def test_energy_statistics_written_with_cumulative_sum(hass):
     await async_import_line_statistics(
         hass,
         line_id=LINE_BEZUG,
-        display_name="Bezug",
+        display_name="Import",
         quantity=Quantity.ENERGY_INTERVAL,
         points=points,
     )
@@ -110,7 +110,7 @@ async def test_reimporting_same_window_does_not_double_count(hass):
         await async_import_line_statistics(
             hass,
             line_id=LINE_BEZUG,
-            display_name="Bezug",
+            display_name="Import",
             quantity=Quantity.ENERGY_INTERVAL,
             points=points,
         )
@@ -134,7 +134,7 @@ async def test_later_window_continues_the_sum(hass):
     await async_import_line_statistics(
         hass,
         line_id=LINE_BEZUG,
-        display_name="Bezug",
+        display_name="Import",
         quantity=Quantity.ENERGY_INTERVAL,
         points=first,
     )
@@ -143,7 +143,7 @@ async def test_later_window_continues_the_sum(hass):
     await async_import_line_statistics(
         hass,
         line_id=LINE_BEZUG,
-        display_name="Bezug",
+        display_name="Import",
         quantity=Quantity.ENERGY_INTERVAL,
         points=second,
     )

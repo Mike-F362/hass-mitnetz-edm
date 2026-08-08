@@ -31,7 +31,7 @@ from homeassistant.components.recorder.statistics import async_add_external_stat
 from homeassistant.core import HomeAssistant
 from homeassistant.util import dt as dt_util
 
-from .const import DOMAIN
+from .const import DEVICE_NAME, DOMAIN
 from .obis import UNIT_KW, UNIT_KWH, Quantity
 
 _LOGGER = logging.getLogger(__name__)
@@ -158,7 +158,7 @@ async def async_import_line_statistics(
     metadata = StatisticMetaData(
         has_mean=not has_sum,
         has_sum=has_sum,
-        name=f"Mitnetz Strom EDM {display_name}",
+        name=f"{DEVICE_NAME} {display_name}",
         source=DOMAIN,
         statistic_id=statistic_id,
         unit_of_measurement=unit,

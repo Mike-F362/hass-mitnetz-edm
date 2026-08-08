@@ -35,8 +35,8 @@ HTTP-API ab (aiohttp) – kein Selenium, kein Playwright, kein Browser.
 
 ## Installation (HACS)
 
-1. Dieses Repository als "Custom repository" (Kategorie: Integration) in
-   HACS hinzufügen.
+1. `https://github.com/Mike-F362/hass-mitnetz-edm` als "Custom repository"
+   (Kategorie: Integration) in HACS hinzufügen.
 2. "Mitnetz Strom EDM" installieren.
 3. Home Assistant neu starten.
 4. Einstellungen → Geräte & Dienste → Integration hinzufügen → "Mitnetz
@@ -85,7 +85,7 @@ Attribute je Sensor: `obis_code`, `measurement_point`, `quantity`,
 ### Abgeleitete Leistungssensoren
 
 Jede Intervallenergie-Line (OBIS `D` = 29) bekommt zusätzlich einen
-**kW-Sensor**, z. B. „Bezug Leistung" und „Einspeisung Leistung". Er trägt die
+**kW-Sensor**, z. B. „Import Power" und „Export Power". Er trägt die
 mittlere Leistung des jeweils letzten Messintervalls:
 
     P[kW] = E[kWh] / t[h]
@@ -142,7 +142,12 @@ das D-Feld:
 | 29     | Intervallenergie      | kWh     | `measurement`      |
 
 Das C-Feld bestimmt die Richtung (`1` = Bezug, `2` = Einspeisung); daraus
-entsteht der Anzeigename, z. B. `1-1:2.6.0` → "Einspeisung Maximum".
+entsteht der Anzeigename, z. B. `1-1:2.6.0` → „Export Maximum".
+
+Die Anzeigenamen sind durchgehend englisch und in `const.py` gesammelt
+(`NAME_*`), lassen sich also an einer Stelle prüfen und ändern. Ein Umbenennen
+lässt Entity-IDs und aufgezeichnete Historie unberührt, weil die
+Entity-Registry über die Unique-ID geführt wird.
 
 Wichtig: Maximum- und Mittelwert-Lines sind **Leistungswerte in kW**, die pro
 Messintervall steigen *und fallen*. Würden sie als `total_increasing`
