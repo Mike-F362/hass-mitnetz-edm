@@ -29,7 +29,8 @@ def quarter_hours(start: datetime, values: list[float]):
 
 
 def test_statistic_id_is_namespaced():
-    assert statistic_id_for("NMP_TEST_LN_0000002") == "mitnetz_edm:nmp_slp_s_2855186"
+    """The line id is lower-cased and prefixed, never used raw."""
+    assert statistic_id_for("NMP_TEST_LN_0000002") == "mitnetz_edm:nmp_test_ln_0000002"
 
 
 def test_bucket_by_hour_groups_quarter_hours():
