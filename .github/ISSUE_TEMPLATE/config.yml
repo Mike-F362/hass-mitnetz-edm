@@ -1,0 +1,11 @@
+# Blank issues are disabled: a bug report without the diagnostics download and
+# the OBIS codes cannot be acted on, and asking for them afterwards costs both
+# sides a round trip.
+blank_issues_enabled: false
+contact_links:
+  - name: Home Assistant community
+    url: https://community.home-assistant.io/
+    about: General Home Assistant questions unrelated to this integration.
+  # If you enable Discussions (Settings -> General -> Features), add a link
+  # here for "not sure whether this is a bug" questions. Left out for now
+  # because a link to a disabled tab is a dead link.

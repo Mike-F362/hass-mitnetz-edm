@@ -1,0 +1,34 @@
+name: Feature request
+description: Suggest an addition or change
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve?
+      description: >-
+        Describe the situation you are in, not only the solution you have in
+        mind — there may be a simpler way to get you there.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What should it do?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: breaking
+    attributes:
+      label: Would this change existing entities?
+      description: >-
+        Renaming entities, changing units or state classes silently breaks
+        dashboards, automations and recorded history for everyone.
+      options:
+        - "No, purely additive"
+        - "Yes, and I think that is worth it"
+        - "I do not know"
+    validations:
+      required: true

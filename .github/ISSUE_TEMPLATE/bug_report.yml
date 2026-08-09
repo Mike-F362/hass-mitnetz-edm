@@ -1,0 +1,71 @@
+name: Bug report
+description: Something the integration does wrong
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Almost every issue with this integration comes down to *which OBIS
+        lines your portal account exposes* — that differs per meter and per
+        contract. The diagnostics download answers it in one step, so please
+        attach it. It has credentials redacted, but do check it before posting.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you expect, and what did you get instead?
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Integration version
+      placeholder: "1.0.0"
+    validations:
+      required: true
+
+  - type: input
+    id: ha-version
+    attributes:
+      label: Home Assistant version
+      description: Settings → About
+      placeholder: "2026.7.4"
+    validations:
+      required: true
+
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics
+      description: >-
+        Settings → Devices & Services → Mitnetz Strom EDM → ⋮ → Download
+        diagnostics. Paste or attach the file. Credentials are redacted
+        automatically; the measurement point IDs are not, so redact those
+        yourself if you would rather not publish them.
+      render: json
+    validations:
+      required: true
+
+  - type: textarea
+    id: obis
+    attributes:
+      label: Which sensors were created?
+      description: >-
+        The entity names and their `obis_code` attribute, e.g.
+        "Import — 1-1:1.29.0". Also say if a sensor you expected is missing.
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Log output
+      description: >-
+        Enable debug logging for `custom_components.mitnetz_edm`, reproduce,
+        then paste the log. Check it for your meter point designation before
+        posting.
+      render: shell
+    validations:
+      required: false

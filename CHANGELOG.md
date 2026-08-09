@@ -19,6 +19,9 @@ and recorded history.
 - `hacs.json` declaring the minimum Home Assistant version.
 - `NOTICE` carrying the trademark statement, so `LICENSE` stays a verbatim MIT
   text that GitHub's licence detection recognises.
+- Community files: issue forms that require the diagnostics download and the
+  OBIS codes, a pull request template, `CONTRIBUTING.md`, `SECURITY.md`,
+  `CODE_OF_CONDUCT.md` and a Dependabot configuration for the workflow actions.
 
 ### Changed
 
