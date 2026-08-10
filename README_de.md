@@ -1,5 +1,9 @@
 # Mitnetz Strom EDM – Home Assistant Integration
 
+[![CI](https://github.com/Mike-F362/hass-mitnetz-edm/actions/workflows/ci.yml/badge.svg)](https://github.com/Mike-F362/hass-mitnetz-edm/actions/workflows/ci.yml)
+[![HACS](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://hacs.xyz/)
+[![Release](https://img.shields.io/github/v/release/Mike-F362/hass-mitnetz-edm)](https://github.com/Mike-F362/hass-mitnetz-edm/releases)
+
 > MITNETZ STROM und das zugehörige Logo sind Marken der MITNETZ STROM GmbH. Der
 > Name wird hier ausschließlich zur Identifikation des Portals verwendet, mit
 > dem diese Integration kommuniziert. Dieses Projekt ist inoffiziell, steht in
