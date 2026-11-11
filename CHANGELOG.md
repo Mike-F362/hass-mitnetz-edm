@@ -30,6 +30,16 @@ and recorded history.
 - `mitnetz_edm.import_history` fetched the requested range and then discarded
   it. It now fetches in seven-day chunks, imports each line as one continuous
   series and waits for the recorder before the next line.
+- When summer time ends, the hour from 02:00 to 03:00 occurs twice. Both were
+  written into one statistics row holding eight quarter-hours, and the second
+  hour got no row at all. Hours are now keyed in UTC. The day's total was
+  always right; to correct the two hours of 25 October 2026, re-import that
+  day with `mitnetz_edm.import_history` up to the present.
+- The running total restarted at zero when the hour before the fetch window
+  had no stored row - after Home Assistant had been offline for longer than
+  the window reaches back, for instance. The Energy Dashboard shows that as
+  one hour with a large negative value. The total now continues from the last
+  row before the window.
 - External statistics declare `mean_type` and `unit_class`; Home Assistant
   stops accepting them without both in 2026.11.
 - Interval-energy sensors no longer combine device class `energy` with state

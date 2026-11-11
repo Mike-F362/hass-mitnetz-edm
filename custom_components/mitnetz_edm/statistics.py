@@ -27,7 +27,7 @@ hour would overwrite the complete row from an earlier poll; see
 from __future__ import annotations
 
 from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 import logging
 
 from homeassistant.components.recorder.models import (
@@ -49,6 +49,9 @@ _LOGGER = logging.getLogger(__name__)
 #: Suffix for the derived average-power series of an interval-energy line.
 POWER_STATISTIC_SUFFIX = "_power"
 
+#: Lower bound when searching the whole stored series.
+_EPOCH = datetime(1970, 1, 1, tzinfo=UTC)
+
 
 def statistic_id_for(line_id: str, suffix: str = "") -> str:
     """Build the external statistic id for a measurement line.
@@ -63,9 +66,15 @@ def statistic_id_for(line_id: str, suffix: str = "") -> str:
 
 
 def _floor_to_hour(moment: datetime) -> datetime:
-    """Return the start of the hour containing ``moment`` (in local time)."""
-    local = dt_util.as_local(moment)
-    return local.replace(minute=0, second=0, microsecond=0)
+    """Return the start of the hour containing ``moment``, in UTC.
+
+    The hour is a dict key and a row's ``start``, so it has to be an absolute
+    time. Local datetimes are not: when summer time ends, 02:00 occurs twice,
+    and Python compares two datetimes that share a ``tzinfo`` by their
+    wall-clock fields, ignoring ``fold``. Keyed locally, both hours collapse
+    into one row holding eight quarter-hours while the second hour gets none.
+    """
+    return dt_util.as_utc(moment).replace(minute=0, second=0, microsecond=0)
 
 
 def bucket_by_hour(
@@ -106,9 +115,8 @@ def drop_incomplete_leading_hour(
         return points
 
     ordered = sorted(points, key=lambda pair: pair[0])
-    first = dt_util.as_local(ordered[0][0])
-    first_hour = _floor_to_hour(first)
-    if first == first_hour:
+    first_hour = _floor_to_hour(ordered[0][0])
+    if dt_util.as_utc(ordered[0][0]) == first_hour:
         return ordered
 
     return [pair for pair in ordered if _floor_to_hour(pair[0]) != first_hour]
@@ -243,36 +251,58 @@ async def _async_get_previous_sum(
     statistic_id: str,
     points: list[tuple[datetime, float]],
 ) -> float:
-    """Return the cumulative sum of the hour immediately before our window.
+    """Return the cumulative sum of the last stored hour before our window.
 
-    Two cases have to work at once:
+    Three cases have to work at once:
 
     * a *continuation* -- the new window starts after what is already stored,
       so the running total must carry on from there;
     * an *overlap* -- the reload window deliberately re-fetches hours that were
       already written. Those rows get rewritten, so resuming from the hour
-      right before them is what keeps the total from double-counting.
+      right before them is what keeps the total from double-counting;
+    * a *hole* -- the hour right before the window has no row, because Home
+      Assistant was offline for longer than the window reaches back or the
+      portal never had data for it. The total carries on from the last row
+      before the hole; restarting at zero would show up in the Energy
+      Dashboard as one hour with a large negative value.
 
-    Looking at the row directly preceding the window handles both, whereas the
-    last row overall would be inside the window in the overlap case.
+    Only rows *before* the window count: the last row overall would be inside
+    the window in the overlap case. The hour directly preceding the window is
+    tried first, because that is the answer on almost every poll and a single
+    row to read; the search through everything older only runs when it is
+    missing.
     """
+    earliest = _floor_to_hour(min(timestamp for timestamp, _ in points))
+
+    rows = await _async_get_sum_rows(
+        hass, statistic_id, earliest - timedelta(hours=1), earliest
+    )
+    if not rows:
+        rows = await _async_get_sum_rows(hass, statistic_id, _EPOCH, earliest)
+    if not rows:
+        return 0.0
+
+    return float(rows[-1].get("sum") or 0.0)
+
+
+async def _async_get_sum_rows(
+    hass: HomeAssistant,
+    statistic_id: str,
+    start: datetime,
+    end: datetime,
+) -> list:
+    """Return the stored hourly rows in ``[start, end)``, oldest first."""
     from homeassistant.components.recorder import get_instance
     from homeassistant.components.recorder.statistics import statistics_during_period
-
-    earliest = _floor_to_hour(min(timestamp for timestamp, _ in points))
 
     stats = await get_instance(hass).async_add_executor_job(
         statistics_during_period,
         hass,
-        earliest - timedelta(hours=1),
-        earliest,
+        start,
+        end,
         {statistic_id},
         "hour",
         None,
         {"sum"},
     )
-    rows = stats.get(statistic_id) if stats else None
-    if not rows:
-        return 0.0
-
-    return float(rows[-1].get("sum") or 0.0)
+    return (stats.get(statistic_id) if stats else None) or []
