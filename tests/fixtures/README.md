@@ -17,6 +17,14 @@ to be re-identifiable. None of that belongs in a public repository.
 | `measurement_points.json`  | `/sidebarMultiMp/rlm`                       |
 | `timeseries_base.json`     | `/data/mpline/genericto/.../base`           |
 | `timeseries_hours.json`    | `/data/mpline/genericto/.../hours`          |
+| `load_profile_two_days.json` | values only, see below                    |
+
+`load_profile_two_days.json` is not a portal response but two days of
+quarter-hourly values for the overlap regression test. It was derived from a
+real load profile because the failure depends on its shape (quiet nights, car
+charging at several kW, near-zero import while PV covers the load), and then
+anonymised: every value is scaled by a deterministic factor between 0.85 and
+1.15 and rounded, the dates are moved, and no identifier is included.
 
 Two structural properties the tests depend on:
 

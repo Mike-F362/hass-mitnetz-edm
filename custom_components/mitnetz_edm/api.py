@@ -318,6 +318,18 @@ class MitnetzEdmApiClient:
             line,
             kind,
         )
+        if _LOGGER.isEnabledFor(logging.DEBUG):
+            # The raw values are the only way to tell a processing error from
+            # wrong portal data, so they are worth one long line at debug level.
+            _LOGGER.debug(
+                "Values for %s/%s (interval start=value): %s",
+                meterpoint,
+                line,
+                " ".join(
+                    f"{p.timestamp.isoformat()}={p.value}"
+                    for p in sorted(points, key=lambda p: p.timestamp)
+                ),
+            )
         return TimeseriesResult(points=points, kind=kind)
 
     @staticmethod

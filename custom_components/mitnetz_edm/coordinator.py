@@ -16,10 +16,12 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 from homeassistant.util import dt as dt_util
 
 from .api import (
+    MeasurementKind,
     MeasurementPoint,
     MitnetzAuthError,
     MitnetzEdmApiClient,
     MitnetzSessionExpiredError,
+    TimeseriesPoint,
     TimeseriesResult,
 )
 from .const import (
@@ -27,15 +29,64 @@ from .const import (
     DEVICE_NAME,
     DOMAIN,
     FALLBACK_MEASUREMENT_INTERVAL_MIN,
+    FINALISATION_LOOKBACK_DAYS,
+    HISTORY_CHUNK,
     LOGIN_RETRY_DELAYS,
     MAX_LOGIN_ATTEMPTS,
     NAME_POWER_SUFFIX,
 )
 from .obis import Quantity, classify_line
 from .power import derive_power_points, energy_to_power
-from .statistics import POWER_STATISTIC_SUFFIX, async_import_line_statistics
+from .statistics import (
+    POWER_STATISTIC_SUFFIX,
+    async_import_line_statistics,
+    async_wait_for_recorder,
+)
 
 _LOGGER = logging.getLogger(__name__)
+
+
+def compute_fetch_start(
+    last_timestamp: datetime | None,
+    now: datetime,
+    reload_window: timedelta,
+    lookback_days: int = FINALISATION_LOOKBACK_DAYS,
+) -> datetime:
+    """Where a poll starts fetching: a full local hour, far enough back.
+
+    Two lower bounds apply, and the earlier one wins:
+
+    * the configured reload window behind the newest known interval (or behind
+      ``now`` before anything was fetched), and
+    * local midnight ``lookback_days`` days ago, so the portal's provisional
+      values are fetched again once it has replaced them with measured ones.
+
+    The result is floored to the full local hour, so the window's first hour is
+    complete whenever the portal has data for it. A window starting at, say,
+    14:45 would rewrite the 14:00 row with a single quarter-hour.
+    """
+    anchor = last_timestamp if last_timestamp is not None else now
+    start = anchor - reload_window
+
+    local_now = dt_util.as_local(now)
+    earliest_day = dt_util.start_of_local_day(
+        local_now.date() - timedelta(days=lookback_days)
+    )
+    start = min(start, earliest_day)
+
+    return dt_util.as_local(start).replace(minute=0, second=0, microsecond=0)
+
+
+def merge_points(batches: list[list[TimeseriesPoint]]) -> list[TimeseriesPoint]:
+    """Combine chunked fetches into one ascending series without duplicates.
+
+    Consecutive chunks share their boundary interval; the later fetch wins.
+    """
+    by_timestamp: dict[datetime, TimeseriesPoint] = {}
+    for batch in batches:
+        for point in batch:
+            by_timestamp[point.timestamp] = point
+    return [by_timestamp[key] for key in sorted(by_timestamp)]
 
 
 @dataclass(slots=True)
@@ -334,27 +385,66 @@ class MitnetzEdmCoordinator(DataUpdateCoordinator[MitnetzEdmData]):
             _LOGGER.exception("Failed to import power statistics for line %s", line_id)
 
     def _compute_start(self, line_id: str, now: datetime) -> datetime:
-        """Compute where to start fetching for a line.
-
-        The last known timestamp minus the overlap window, or the configured
-        reload window when nothing has been fetched yet.
-        """
+        """Compute where to start fetching for a line (see compute_fetch_start)."""
         existing = self._data.lines.get(line_id)
-        if existing and existing.last_timestamp is not None:
-            return existing.last_timestamp - self.reload_window
-        return now - self.reload_window
+        last_timestamp = existing.last_timestamp if existing else None
+        return compute_fetch_start(last_timestamp, now, self.reload_window)
 
     async def async_import_history(self, start: datetime, end: datetime) -> None:
-        """Service handler: re-import an arbitrary historical window."""
+        """Service handler: re-import an arbitrary historical window.
+
+        Fetches the range in chunks, merges them and imports every line as one
+        series, so the running ``sum`` is continuous across the whole range.
+        It continues from the hour before ``start`` but the hours *after*
+        ``end`` keep their stored totals - import up to the present to avoid a
+        step in the cumulative sum.
+        """
         if not self.api.is_logged_in:
             await self._ensure_logged_in()
 
+        start = dt_util.as_local(start).replace(minute=0, second=0, microsecond=0)
         points = (
             self.data.points if self.data else await self.api.get_measurement_points()
         )
         for point in points:
             for line in point.lines:
-                await self.api.get_timeseries(
-                    meterpoint=point.id, line=line.id, start=start, end=end
+                batches: list[list[TimeseriesPoint]] = []
+                kind: MeasurementKind | None = None
+                chunk_start = start
+                while chunk_start < end:
+                    chunk_end = min(chunk_start + HISTORY_CHUNK, end)
+                    result = await self.api.get_timeseries(
+                        meterpoint=point.id,
+                        line=line.id,
+                        start=chunk_start,
+                        end=chunk_end,
+                    )
+                    batches.append(result.points)
+                    kind = kind or result.kind
+                    chunk_start = chunk_end
+
+                merged = merge_points(batches)
+                if not merged or kind is None:
+                    continue
+                result = TimeseriesResult(points=merged, kind=kind)
+                _LOGGER.debug(
+                    "Importing history for line %s: %d interval(s) from %s to %s",
+                    line.id,
+                    len(merged),
+                    merged[0].timestamp,
+                    merged[-1].timestamp,
                 )
+                await self._async_import_statistics(
+                    line.id,
+                    line.name,
+                    LineData(
+                        point_id=point.id,
+                        line_id=line.id,
+                        obis_code=line.name,
+                        result=result,
+                        interval=result.interval,
+                    ),
+                )
+                await async_wait_for_recorder(self.hass)
+
         await self.async_request_refresh()

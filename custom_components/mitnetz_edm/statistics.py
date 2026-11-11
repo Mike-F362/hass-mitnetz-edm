@@ -16,6 +16,12 @@ aggregated per hour:
 
 * energy lines  -> ``sum`` (and a running cumulative total for the Energy Dashboard)
 * power  lines  -> ``mean`` / ``min`` / ``max`` over the intervals in that hour
+
+An hourly row *replaces* whatever was stored for that hour before. Every poll
+re-fetches an overlapping window, and a window rarely starts on a full hour, so
+its first hour holds only some of that hour's intervals. Writing that partial
+hour would overwrite the complete row from an earlier poll; see
+:func:`drop_incomplete_leading_hour`.
 """
 
 from __future__ import annotations
@@ -26,11 +32,13 @@ import logging
 
 from homeassistant.components.recorder.models import (
     StatisticData,
+    StatisticMeanType,
     StatisticMetaData,
 )
 from homeassistant.components.recorder.statistics import async_add_external_statistics
 from homeassistant.core import HomeAssistant
 from homeassistant.util import dt as dt_util
+from homeassistant.util.unit_conversion import EnergyConverter, PowerConverter
 
 from .const import DEVICE_NAME, DOMAIN
 from .obis import UNIT_KW, UNIT_KWH, Quantity
@@ -74,6 +82,36 @@ def bucket_by_hour(
     for timestamp, value in sorted(points, key=lambda pair: pair[0]):
         buckets[_floor_to_hour(timestamp)].append(value)
     return dict(buckets)
+
+
+def drop_incomplete_leading_hour(
+    points: list[tuple[datetime, float]],
+) -> list[tuple[datetime, float]]:
+    """Discard the intervals of a first hour the window only partly covers.
+
+    Each poll re-fetches an overlapping window - the reload window behind the
+    newest interval - and that window advances by one interval per poll. Its
+    first hour therefore holds three, two, then one of that hour's intervals
+    in successive polls, and each of those polls replaced the stored row with
+    the partial sum. The last write for almost every hour was the one holding
+    only its final quarter, which is why long-term statistics showed about a
+    third of the real consumption. Hours came out complete only where the
+    window jumped forward, e.g. after the portal's nightly outage.
+
+    The complete row for such an hour was written by an earlier poll, so
+    leaving it untouched is correct. A window that starts exactly on the hour
+    is kept as it is.
+    """
+    if not points:
+        return points
+
+    ordered = sorted(points, key=lambda pair: pair[0])
+    first = dt_util.as_local(ordered[0][0])
+    first_hour = _floor_to_hour(first)
+    if first == first_hour:
+        return ordered
+
+    return [pair for pair in ordered if _floor_to_hour(pair[0]) != first_hour]
 
 
 def build_statistics(
@@ -150,6 +188,10 @@ async def async_import_line_statistics(
         _LOGGER.debug("Skipping statistics for %s: unknown quantity", line_id)
         return
 
+    points = drop_incomplete_leading_hour(points)
+    if not points:
+        return
+
     statistic_id = statistic_id_for(line_id, suffix)
     has_sum = quantity in (Quantity.ENERGY_INTERVAL, Quantity.ENERGY_TOTAL)
     unit = UNIT_KWH if has_sum else UNIT_KW
@@ -163,11 +205,14 @@ async def async_import_line_statistics(
         return
 
     metadata = StatisticMetaData(
-        has_mean=not has_sum,
+        mean_type=StatisticMeanType.NONE if has_sum else StatisticMeanType.ARITHMETIC,
         has_sum=has_sum,
         name=f"{DEVICE_NAME} {display_name}",
         source=DOMAIN,
         statistic_id=statistic_id,
+        unit_class=(
+            EnergyConverter.UNIT_CLASS if has_sum else PowerConverter.UNIT_CLASS
+        ),
         unit_of_measurement=unit,
     )
 
@@ -178,6 +223,19 @@ async def async_import_line_statistics(
         quantity.value,
     )
     async_add_external_statistics(hass, metadata, rows)
+
+
+async def async_wait_for_recorder(hass: HomeAssistant) -> None:
+    """Wait until the recorder has committed the statistics queued so far.
+
+    ``async_add_external_statistics`` only queues a job. The next import reads
+    the previous hour's ``sum`` back from the database, so a long backfill that
+    imports chunk after chunk must let each one land first, or the running
+    total restarts from a stale value.
+    """
+    from homeassistant.components.recorder import get_instance
+
+    await get_instance(hass).async_block_till_done()
 
 
 async def _async_get_previous_sum(

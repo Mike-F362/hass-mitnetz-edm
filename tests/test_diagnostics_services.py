@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+import itertools
 from zoneinfo import ZoneInfo
 
 import pytest
@@ -12,11 +13,14 @@ from custom_components.mitnetz_edm.const import (
     ATTR_END,
     ATTR_START,
     DOMAIN,
+    HISTORY_CHUNK,
     SERVICE_IMPORT_HISTORY,
 )
 from custom_components.mitnetz_edm.diagnostics import (
     async_get_config_entry_diagnostics,
 )
+
+from .conftest import LINE_BEZUG
 
 BERLIN = ZoneInfo("Europe/Berlin")
 
@@ -79,11 +83,20 @@ async def test_import_history_fetches_requested_range(hass, init_integration, mo
     )
     await hass.async_block_till_done()
 
+    # Long ranges are fetched in consecutive chunks that cover it exactly.
     ranges = [
         (kwargs["start"], kwargs["end"])
         for _, kwargs in mock_api.get_timeseries.await_args_list
+        # The refresh that follows the import fetches up to "now"; skip it.
+        if kwargs["line"] == LINE_BEZUG and kwargs["end"] <= end
     ]
-    assert (start, end) in ranges
+    assert ranges[0][0] == start
+    assert ranges[-1][1] == end
+    for (_, previous_end), (next_start, _) in itertools.pairwise(ranges):
+        assert next_start == previous_end
+    assert all(
+        chunk_end - chunk_start <= HISTORY_CHUNK for chunk_start, chunk_end in ranges
+    )
 
 
 async def test_import_history_covers_every_line(hass, init_integration, mock_api):

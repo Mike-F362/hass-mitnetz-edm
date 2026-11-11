@@ -33,9 +33,12 @@ _QUANTITY_CLASSES: dict[
     Quantity, tuple[SensorDeviceClass | None, SensorStateClass | None]
 ] = {
     # A per-interval kWh figure that rises and falls: it is *not* a cumulative
-    # register, so MEASUREMENT is correct here. The Energy Dashboard is fed
-    # from long-term statistics instead (see statistics.py).
-    Quantity.ENERGY_INTERVAL: (SensorDeviceClass.ENERGY, SensorStateClass.MEASUREMENT),
+    # register, so MEASUREMENT is correct here. Home Assistant only accepts
+    # TOTAL or TOTAL_INCREASING for the ENERGY device class, so this sensor
+    # carries no device class; the unit stays kWh. Keeping MEASUREMENT keeps
+    # the statistics already recorded for these entities valid. The Energy
+    # Dashboard is fed from the external statistics instead (statistics.py).
+    Quantity.ENERGY_INTERVAL: (None, SensorStateClass.MEASUREMENT),
     Quantity.ENERGY_TOTAL: (
         SensorDeviceClass.ENERGY,
         SensorStateClass.TOTAL_INCREASING,
@@ -115,6 +118,10 @@ class MitnetzEdmLineSensor(CoordinatorEntity[MitnetzEdmCoordinator], SensorEntit
         self._attr_device_class = device_class
         self._attr_state_class = state_class
         self._attr_suggested_display_precision = 3
+        if classification.quantity is Quantity.ENERGY_INTERVAL:
+            # Without a device class the frontend would fall back to a generic
+            # icon.
+            self._attr_icon = "mdi:lightning-bolt"
 
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry.entry_id)},

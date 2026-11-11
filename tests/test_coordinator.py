@@ -11,6 +11,7 @@ from datetime import timedelta
 from unittest.mock import AsyncMock, patch
 
 from homeassistant.helpers.update_coordinator import UpdateFailed
+from homeassistant.util import dt as dt_util
 import pytest
 
 from custom_components.mitnetz_edm.api import (
@@ -198,14 +199,27 @@ async def test_recovers_on_later_poll_once_credentials_work(
 async def test_reload_window_used_on_first_fetch(
     hass, init_integration, mock_api, config_entry_options
 ):
-    """The first poll reaches back by the configured window."""
-    from custom_components.mitnetz_edm.const import CONF_RELOAD_WINDOW
+    """The first poll reaches back at least by the configured window.
+
+    It goes further when needed: to a full hour, and to local midnight two days
+    ago, so provisional portal values get re-fetched once they are final.
+    """
+    from custom_components.mitnetz_edm.const import (
+        CONF_RELOAD_WINDOW,
+        FINALISATION_LOOKBACK_DAYS,
+    )
 
     window = timedelta(minutes=config_entry_options[CONF_RELOAD_WINDOW])
     _, kwargs = mock_api.get_timeseries.await_args_list[0]
-    span = kwargs["end"] - kwargs["start"]
+    start = dt_util.as_local(kwargs["start"])
+    span = kwargs["end"] - start
 
-    assert abs(span - window) < timedelta(seconds=5)
+    assert span >= window
+    assert (start.minute, start.second, start.microsecond) == (0, 0, 0)
+    local_end = dt_util.as_local(kwargs["end"])
+    assert start <= dt_util.start_of_local_day(
+        local_end.date() - timedelta(days=FINALISATION_LOOKBACK_DAYS)
+    )
 
 
 async def test_overlap_applied_on_subsequent_fetch(hass, init_integration, mock_api):

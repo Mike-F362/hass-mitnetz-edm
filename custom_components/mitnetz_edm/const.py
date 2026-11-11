@@ -52,6 +52,18 @@ MAX_STALE_INTERVALS: Final = 96  # a full day at 15-minute intervals
 #: Fallback interval assumed when it cannot be derived from the data.
 FALLBACK_MEASUREMENT_INTERVAL_MIN: Final = 15
 
+#: How many whole local days every poll re-fetches, regardless of the reload
+#: window. The portal publishes *provisional* (estimated) values within
+#: minutes and replaces them with the measured ones later - usually in the
+#: night after the day in question, occasionally a day later still. An
+#: interval that drops out of the fetch window before it is finalised keeps
+#: its estimate in long-term statistics for good.
+FINALISATION_LOOKBACK_DAYS: Final = 2
+
+#: ``import_history`` fetches long ranges in chunks of this size, so a single
+#: request never asks the portal for months of quarter-hours at once.
+HISTORY_CHUNK: Final = timedelta(days=7)
+
 # --- Defaults ---------------------------------------------------------------
 DEFAULT_UPDATE_INTERVAL_MIN: Final = 15
 DEFAULT_RELOAD_WINDOW_HOURS: Final = 24

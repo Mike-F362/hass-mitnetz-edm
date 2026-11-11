@@ -12,6 +12,32 @@ and recorded history.
 
 ## [Unreleased]
 
+### Fixed
+
+- Long-term statistics held only about a third of the real energy. Every poll
+  re-fetched a window that started mid-hour and advanced by one interval per
+  poll, and each poll replaced that first hour's row with the partial sum - so
+  almost every hour ended up holding only its last quarter-hour. A partial
+  leading hour is no longer written, and the fetch window starts on a full
+  hour. Visible in existing statistics as hourly `_power` rows with
+  `min == max`. Statistics written before this fix should be re-imported with
+  `mitnetz_edm.import_history` up to the present.
+- The portal publishes provisional estimates within minutes and replaces them
+  with measured values later, usually the following night. Every poll now
+  re-fetches at least back to local midnight two days ago
+  (`FINALISATION_LOOKBACK_DAYS`), so those replacements reach the statistics;
+  with a 24-hour window the hour after midnight kept its estimate.
+- `mitnetz_edm.import_history` fetched the requested range and then discarded
+  it. It now fetches in seven-day chunks, imports each line as one continuous
+  series and waits for the recorder before the next line.
+- External statistics declare `mean_type` and `unit_class`; Home Assistant
+  stops accepting them without both in 2026.11.
+- Interval-energy sensors no longer combine device class `energy` with state
+  class `measurement`, which Home Assistant rejects with a warning at every
+  start. They keep `measurement` and the unit kWh but have no device class, so
+  their recorded statistics stay valid. **Breaking** in the sense above: the
+  `device_class` attribute disappears from these two entities.
+
 ### Added
 
 - `pyproject.toml` with ruff and mypy configuration, and a GitHub Actions
@@ -22,6 +48,8 @@ and recorded history.
 - Community files: issue forms that require the diagnostics download and the
   OBIS codes, a pull request template, `CONTRIBUTING.md`, `SECURITY.md`,
   `CODE_OF_CONDUCT.md` and a Dependabot configuration for the workflow actions.
+- At debug level the API client logs the raw values of every fetched series,
+  so a processing error can be told apart from wrong portal data.
 
 ### Changed
 

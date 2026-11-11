@@ -49,11 +49,16 @@ async def test_all_lines_create_sensors(hass, init_integration):
 
 
 async def test_energy_line_units(hass, init_integration):
-    """Interval energy lines are kWh."""
+    """Interval energy lines are kWh, without the ``energy`` device class.
+
+    Home Assistant rejects ``state_class: measurement`` for that device class
+    and logs a warning on every start; a per-interval value is not a total.
+    """
     state = hass.states.get(ENTITY_IMPORT)
     assert state is not None
     assert state.attributes[ATTR_UNIT_OF_MEASUREMENT] == "kWh"
-    assert state.attributes[ATTR_DEVICE_CLASS] == "energy"
+    assert ATTR_DEVICE_CLASS not in state.attributes
+    assert state.attributes["state_class"] == "measurement"
 
 
 async def test_maximum_demand_line_is_kilowatt(hass, init_integration):
