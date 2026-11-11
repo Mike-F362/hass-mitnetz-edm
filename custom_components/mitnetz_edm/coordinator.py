@@ -402,6 +402,13 @@ class MitnetzEdmCoordinator(DataUpdateCoordinator[MitnetzEdmData]):
         if not self.api.is_logged_in:
             await self._ensure_logged_in()
 
+        # The service accepts times without an offset; those mean local time,
+        # as they do everywhere else in the Home Assistant UI.
+        local_tz = dt_util.get_default_time_zone()
+        if start.tzinfo is None:
+            start = start.replace(tzinfo=local_tz)
+        if end.tzinfo is None:
+            end = end.replace(tzinfo=local_tz)
         start = dt_util.as_local(start).replace(minute=0, second=0, microsecond=0)
         points = (
             self.data.points if self.data else await self.api.get_measurement_points()

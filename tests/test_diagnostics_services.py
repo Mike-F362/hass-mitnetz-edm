@@ -99,6 +99,28 @@ async def test_import_history_fetches_requested_range(hass, init_integration, mo
     )
 
 
+async def test_import_history_treats_naive_times_as_local(
+    hass, init_integration, mock_api
+):
+    """A start/end without offset, as typed in the UI, is local time."""
+    from homeassistant.util import dt as dt_util
+
+    mock_api.get_timeseries.reset_mock()
+
+    await hass.services.async_call(
+        DOMAIN,
+        SERVICE_IMPORT_HISTORY,
+        {ATTR_START: "2026-06-01 00:00:00", ATTR_END: "2026-06-02 00:00:00"},
+        blocking=True,
+    )
+    await hass.async_block_till_done()
+
+    local_tz = dt_util.get_default_time_zone()
+    first = mock_api.get_timeseries.await_args_list[0].kwargs
+    assert first["start"] == datetime(2026, 6, 1, tzinfo=local_tz)
+    assert first["end"] == datetime(2026, 6, 2, tzinfo=local_tz)
+
+
 async def test_import_history_covers_every_line(hass, init_integration, mock_api):
     mock_api.get_timeseries.reset_mock()
 
